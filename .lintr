@@ -13,5 +13,5 @@ exclusions: list(
     "inst/doc/creating_linters.R" = 1, 
     "inst/example/bad.R", 
     "tests/testthat/exclusions-test",
-    "R/"
+    "src/"
   )

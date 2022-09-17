@@ -1,0 +1,14 @@
+stages:
+  build_activities:
+    cmd: Rscript src/1_build_activities.R
+    deps:
+      - src/1_build_activities.R
+    outs:
+      - cache/train.csv
+  build_parquet:
+    cmd: Rscript R/build_parquet.R
+    deps: 
+      - R/build_parquet.R
+      - data/chembl_30.db
+    outs:
+      - data/parquet
