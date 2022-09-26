@@ -1,28 +1,27 @@
 import deepchem as dc
 import numpy as np
-from deepchem.feat import RobertaFeaturizer
+import pandas as pd
 
-train_smiles = [
-        'Cc1cccc(N2CCN(C(=O)C34CC5CC(CC(C5)C3)C4)CC2)c1C',
-        'Cn1ccnc1SCC(=O)Nc1ccc(Oc2ccccc2)cc1',
-        'COc1cc2c(cc1NC(=O)CN1C(=O)NC3(CCc4ccccc43)C1=O)oc1ccccc12',
-        'O=C1/C(=C/NC2CCS(=O)(=O)C2)c2ccccc2C(=O)N1c1ccccc1',
-        'NC(=O)NC(Cc1ccccc1)C(=O)O', 'CCn1c(CSc2nccn2C)nc2cc(C(=O)O)ccc21',
-        'CCc1cccc2c1NC(=O)C21C2C(=O)N(Cc3ccccc3)C(=O)C2C2CCCN21',
-        'COc1ccc(C2C(C(=O)NCc3ccccc3)=C(C)N=C3N=CNN32)cc1OC',
-        'CCCc1cc(=O)nc(SCC(=O)N(CC(C)C)C2CCS(=O)(=O)C2)[nH]1',
-        'CCn1cnc2c1c(=O)n(CC(=O)Nc1cc(C)on1)c(=O)n2Cc1ccccc1'
-    ]
+"""
+BUILDING A VAE 
+https://github.com/deepchem/deepchem/blob/9664aeab16940e1ee46030cac08d90e12aa24751/deepchem/models/seqtoseq.py
+"""
+
+df = pd.read_csv("cache/train.csv")
+df2 = df[df["canonical_smiles"].apply(lambda x: len(x) < 200)]
+train_smiles = df2['canonical_smiles'].unique().tolist()[1:100000]
 
 tokens = set()
 for s in train_smiles:
   tokens = tokens.union(set(c for c in s))
+
 tokens = sorted(list(tokens))
 max_length = max(len(s) for s in train_smiles) + 1
 s = dc.models.seqtoseq.AspuruGuzikAutoEncoder(tokens, max_length)
 
 def generate_sequences(smiles, epochs):
   for i in range(epochs):
+    print(i)
     for s in smiles:
       yield (s, s)
 
@@ -31,7 +30,9 @@ s.fit_sequences(generate_sequences(train_smiles, 100))
 # Test it out.
 pred1 = s.predict_from_sequences(train_smiles, beam_width=1)
 pred4 = s.predict_from_sequences(train_smiles, beam_width=4)
-embeddings = s.predict_embeddings(train_smiles)
+
+embeddings = s.predict_embeddings(train_smiles[0:5])
+
 pred1e = s.predict_from_embeddings(embeddings, beam_width=1)
 pred4e = s.predict_from_embeddings(embeddings, beam_width=4)
 
