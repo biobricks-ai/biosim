@@ -1,27 +1,26 @@
 # biosim
 Supervised biological similarity models built for distribution with biobricks
 
-```sh
-biobricks install biosim
-biobricks import biosim ./imports
-```
-
-R
-```r
-mod <- keras::load_model("imports/biosim/biosim.hdf5")
-mod$predict("c1ccccc1")
-```
-
-python
-```py
-from keras.models import load_model
-model = load_model('imports/biosim/biosim/hdf5')
-model.predict('c1ccccc1')
-```
 
 # Development
-get dev environment with docker
-need nvidia-docker2 to run this container ([install directions](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker))
+```sh
+python3 -m venv venv
+source ./venv/bin/activate 
+pip install -r requirements.txt
 ```
-docker run --gpus -v $(pwd):/biosim insilica/biobricks:3.0-cuda /bin/bash
-```
+
+# TODO
+1. Create better latent space models (VAE, GCN)
+2. Condition latent space on assay
+3. Illustrate that you can move 'towards' or 'away' from an assay value
+4. Write paper
+
+# Directory Structure
+
+`src` - code used to build resources  
+`src/models`  
+`src/generators` 
+
+`notebook` - some scratch code for analyzing models  
+
+`datadep` - imported data dependences
