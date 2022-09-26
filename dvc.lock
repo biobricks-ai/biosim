@@ -1,0 +1,25 @@
+schema: '2.0'
+stages:
+  build_activities:
+    cmd: Rscript src/1_build_activities.R
+    deps:
+    - path: src/1_build_activities.R
+      md5: 99fa4d8431c5e678c8e0f3d52c4e8c24
+      size: 790
+    outs:
+    - path: cache/train.csv
+      md5: 1c5643af4efe1c64be21f2c27a47a4ae
+      size: 857243150
+  build_model:
+    cmd: Rscript src/2_build_model.R
+    deps:
+    - path: cache/train.csv
+      md5: 1c5643af4efe1c64be21f2c27a47a4ae
+      size: 857243150
+    - path: src/2_build_model.R
+      md5: 80b6836e7adc47cfd072f73c69f4584d
+      size: 2820
+    outs:
+    - path: model/model.hdf5
+      md5: 64f3933e8bca75e9b0eff1714d57acf6
+      size: 81200
