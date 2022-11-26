@@ -1,6 +1,12 @@
-reticulate::use_virtualenv(here::here("venv"))
+reticulate::use_condaenv("deepchem")
 pacman::p_load(biobricks, arrow, tidyverse, keras, tensorflow)
 
+# 1. load the encoder
+# 2. load the 
+# 2. encode all the smiles
+# 3. train an encoding tuner to predict output
+
+m <- keras::load_model_hdf5("model/encoder.hdf5")
 
 data <- readr::read_csv("cache/train.csv") |> 
   filter(stype=="1998110-%-Percent Effect") |>

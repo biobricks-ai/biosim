@@ -24,3 +24,48 @@ simple_model <- function(padsize = 100, tokenizer) {
   out = layer_subtract(list(an,ap),name="difference") # + true - if false
   keras_model(list(inp_anc,inp_clo,inp_far), out)
 }
+
+sampling <- layer_lambda(f=function(arg){
+  z_mean <- arg[, 1:(latent_dim)]
+  z_log_var <- arg[, (latent_dim + 1):(2 * latent_dim)]
+  
+  epsilon <- k_random_normal(
+    shape = c(k_shape(z_mean)[[1]]), 
+    mean=0.,
+    stddev=1.0#epsilon_std
+  )
+  
+  z_mean + k_exp(z_log_var/2)*epsilon
+})
+
+vae_model <- function(tokenizer, original_dim=5800, latent_dim=10, intermediate_dim=100) {
+
+  inp_anc <- layer_input(c(original_dim),name = "inp-anc")  
+
+  h <- layer_dense(inp_anc, intermediate_dim, activation = "relu")
+  z_mean <- layer_dense(h, latent_dim)
+  z_log_var <- layer_dense(h, latent_dim)
+  z <- layer_concatenate(list(z_mean, z_log_var)) |> sampling()
+  
+  # we instantiate these layers separately so as to reuse them later
+  decoder_h <- layer_dense(units=intermediate_dim, activation = "relu")
+  decoder_mean <- layer_dense(units = original_dim, activation = "sigmoid")
+  h_decoded <- decoder_h(z)
+  x_decoded_mean <- decoder_mean(h_decoded)
+
+  # end-to-end autoencoder
+  vae <- keras_model(inp_anc, x_decoded_mean)
+
+  vae_loss <- function(x, x_decoded_mean){
+    xent_loss <- (original_dim/1.0)*loss_binary_crossentropy(x, x_decoded_mean)
+    kl_loss <- -0.5*k_mean(1 + z_log_var - k_square(z_mean) - k_exp(z_log_var), axis = -1L)
+    xent_loss + kl_loss
+  }
+
+  vae |> compile(optimizer = "rmsprop", loss = vae_loss)
+
+  encoder <- keras_model(inp_anc, z_mean)
+
+  list(vae=vae,encoder=encoder)
+}
+
