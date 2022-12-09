@@ -1,58 +1,63 @@
 # use the conda environment created with conda env create --name deepchem python=3.9
 reticulate::use_condaenv("deepchem")
-pacman::p_load(keras,tensorflow,tidyverse)
+pacman::p_load(keras,tensorflow,tidyverse,tfdatasets,RSQLite)
 
-transformers <- reticulate::import('transformers') # this is a huggingface.co api
 
-hface <- "seyonec/ChemBERTa-zinc-base-v1"
-tok   <- transformers$AutoTokenizer$from_pretrained(hface)
-bert  <- transformers$TFAutoModel$from_pretrained(hface, from_pt=TRUE)
+# fs::dir_ls("cache/tfrecord") |> fs::file_size()
 
-mktokens <- \(smi){
-  res <- tok$batch_encode_plus(smi,padding="max_length", max_length=512L)
-  enc <- do.call(rbind,map(1:length(smi) - 1, \(i){ res[i]$ids})) 
-  att <- do.call(rbind,map(1:length(smi) - 1, \(i){ res[i]$attention_mask})) 
-  list(input_ids=enc, attention_mask=att)
+parse_fun <- function(example_proto) {
+  features <- dict(
+    "smiles"  = tf$io$FixedLenFeature(shape(1), tf$string),
+    "embchem" = tf$io$FixedLenFeature(shape(768), tf$float32),
+    "embprop" = tf$io$FixedLenFeature(shape(1), tf$int64),
+    "output"  = tf$io$FixedLenFeature(shape(1), tf$int64)
+  )
+  
+  feat <- tf$io$parse_single_example(example_proto, features)
+  list(list(embchem=feat$embchem,embprop=feat$embprop),feat$output)
 }
 
-data <- readr::read_csv("cache/train.csv") |>
-  filter(stype=="1998110-%-Percent Effect") |>
-  mutate(value = array(ifelse(standard_value>0,1L,0L))) |>
-  sample_n(1000)
+identity <- reticulate::r_to_py(\(x){ x })
 
-tokens <- mktokens(data$canonical_smiles) |> map(~ keras_array(.,dtype="int32"))
-embeds <- array(bert$predict(tokens)[[2]],dim=c(nrow(data),768L))
-embeds <- tf$linalg$normalize(embeds,axis=-1L)[[1]]
-
-train_idx <- 1:ceiling(nrow(data)*0.9)
-test_idx <- setdiff(1:nrow(data),train_idx)
-train <- list(x = embeds[train_idx,], y = data$value[train_idx])
-test  <- list(x = embeds[test_idx,],  y = data$value[test_idx])
+instances_per_file <- 1000 
+tfrecs <- fs::dir_ls("cache/tfrecord")
+Ndata  <- instances_per_file*length(tfrecs)
+data   <- tfrecord_dataset(tfrecs) |> dataset_map(parse_fun) 
+train  <- data |> dataset_take(0.8*Ndata) |> dataset_batch(100) |> dataset_repeat()
+test   <- data |> dataset_skip(0.8*Ndata) |> dataset_take(0.1*Ndata) |> dataset_batch(100)
+vali   <- data |> dataset_skip(0.9*Ndata) |> dataset_take(0.1*Ndata) |> dataset_batch(100)
 
 build_model <- function(){
-  iput <- layer_input(shape = c(768), dtype = "float")
-  hidden <- iput |> layer_dense(units = 100, activation="relu")
-  hnorm <- hidden |> layer_layer_normalization()
-  oput <- hnorm |> layer_dense(units = 1, activation="sigmoid")
-  keras_model(iput, oput)
+  keras::k_clear_session()
+  embed_smiles <- layer_input(shape = c(768L), dtype = "float", name="embchem") 
+  norm_smiles  <- embed_smiles |> layer_layer_normalization()
+
+  input_property <- layer_input(shape = c(1L), dtype = "float", name="embprop")
+  embed_property <- input_property |> layer_embedding(input_dim = nrow(property_id), output_dim = 768L) |> layer_flatten()
+  norm_property  <- embed_property |> layer_layer_normalization()
+
+  concat <- list(norm_smiles,norm_property) |> layer_concatenate() |> layer_dropout(0.5)
+  hidden <- concat |> layer_dense(units = 100L, activation = "sigmoid", name="emb_chemprop") |> layer_dropout(0.5)
+  output <- hidden |> layer_dense(units = 1, activation="sigmoid")
+  keras_model(list(embed_smiles,input_property), output)
 }
 
 mod <- build_model()
 mod$compile(optimizer = optimizer_adam(), loss = "binary_crossentropy", metrics = "accuracy")
-
-mod$fit(train$x, train$y, epochs = 100L, batch_size = 32L, 
-  validation_data = list(test$x, test$y))
-mod$evaluate(test$x, test$y)
+mod$fit(train, epochs = 10L, steps_per_epoch = ceiling(Ndata/100), validation_data=test)
 
 get_activation <- function(layer,instance){
   keras_model(inputs = mod$inputs, outputs = layer$output) |> predict(instance)
 }
 
 # EVALUATION ===========================================================
-activation = get_activation(mod$layers[[2]],embeds) 
+embeds <- vali |> reticulate::as_iterator() |> reticulate::iter_next() |> pluck(1)
+
+activation = get_activation(mod$layers[[9]],embeds) 
 activation = tf$linalg$normalize(activation,axis=-1L)[[1]]
 
-sim <- tf$matmul(activation,tf$transpose(activation)) |> as.matrix()
+
+sim  <- tf$matmul(activation,tf$transpose(activation)) |> as.matrix()
 esim <- tf$matmul(embeds,tf$transpose(embeds)) |> as.matrix()
 
 simdata <- tibble(left=data$canonical_smiles,leftval=data$value) |>
@@ -107,4 +112,3 @@ res <- callr::r_bg(function(smiles){
   reticulate::source_python('src/py/draw_mols.py')
   draw_mols(smiles,"output2.svg")
 },args=list(smiles=smiles))
-
