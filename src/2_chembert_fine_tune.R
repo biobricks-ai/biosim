@@ -20,7 +20,7 @@ parse_fun <- function(example_proto) {
 identity <- reticulate::r_to_py(\(x){ x })
 
 instances_per_file <- 1000 
-tfrecs <- fs::dir_ls("cache/tfrecord")
+tfrecs <- fs::dir_ls("cache/sims.tfrecord")
 Ndata  <- instances_per_file*length(tfrecs)
 data   <- tfrecord_dataset(tfrecs) |> dataset_map(parse_fun) 
 train  <- data |> dataset_take(0.8*Ndata) |> dataset_batch(100) |> dataset_repeat()

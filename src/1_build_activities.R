@@ -67,18 +67,43 @@ build_embeddings_table <- (function(){
   })
 })()
 
-# CREATE PAIRS TABLE ====================================================
-# dataset = tf$data$experimental$SqlDataset("sqlite", "cache/cache.db",Q,
-#   reticulate::tuple(tf$string, tf$string, tf$string, tf$string, tf$string)) |>
-#   dataset_map(\(a,b,arra,arrb,embedding){ })
+# WRITE EMBEDDINGS AND ACTIVITIES TABLE TO TFRECORDS ====================================
+build_tfrecords <- (function(){
+  pacman::p_load(tidyverse)
+  invisible(safely(fs::dir_delete("./cache/tfrecord-embeddings")))
+  fs::dir_create("./cache/tfrecord-embeddings")
+  con <- DBI::dbConnect(RSQLite::SQLite(), "cache/cache.db")
+  withr::defer({DBI::dbDisconnect(con)})
 
+  query <- DBI::dbSendQuery(con, "SELECT canonical_smiles, embedding, arrstr FROM embeddings")
+  
+  i <- 1
+  while( !DBI::dbHasCompleted(query) ){ 
+    res <- DBI::dbFetch(query, n=1000) |> tibble() 
+    emb <- do.call(rbind,map(res$arrstr, function(x) as.numeric(strsplit(x,",")[[1]])))
+
+    data <- list(
+      embedding=res$embedding, 
+      arr = array(emb,dim=c(nrow(res),dim(emb)[1]))))
+
+    path <- glue::glue("./cache/tfrecord-embeddings/tfrecord-{i}.tfrecord")
+    tfrecords::write_tfrecords(data, path)
+  }
+
+})
+
+data <- list(
+  x = array(rep('a string',10),dim=c(10,1)),
+  z = array(1:100,dim=c(10,10))
+)
+tfrecords::write_tfrecords(data, "example.tfrecords")
+
+# CREATE PAIRS TABLE ====================================================
+  
 # test <- dataset |> dataset_take(5) |> coro::collect()
 
 # build_pairs_table <- (function(){
 #   con <- DBI::dbConnect(RSQLite::SQLite(), "cache/cache.db")
-#   Q <- "SELECT canonical_smiles a, b, arrstr arra, arrb, e.embedding FROM embeddings e INNER JOIN
-#     (SELECT canonical_smiles b, arrstr arrb, embedding FROM embeddings) e2
-#     ON e.embedding = e2.embedding"
 
 #   res <- DBI::dbSendQuery(con,Q)
 #   while(!DBI::dbHasCompleted(res)){
