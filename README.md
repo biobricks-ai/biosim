@@ -1,12 +1,8 @@
 # biosim
 Supervised biological similarity models built for distribution with biobricks
 
-
-# Development
-```sh
-python3 -m venv venv
-source ./venv/bin/activate 
-pip install -r requirements.txt
+# Workflow
+```
 ```
 
 # TODO

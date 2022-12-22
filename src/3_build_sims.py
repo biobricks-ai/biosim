@@ -1,33 +1,6 @@
 import tensorflow as tf, os
 import pathlib, sqlite3, math, numpy as np, timeit
 
-# conn = sqlite3.connect('cache/cache.db')
-# c = conn.cursor()
-# c.execute("SELECT DISTINCT embedding FROM embeddings")
-# embeddings = [x[0] for x in c.fetchall()]
-
-# dims = {'bert':768, 'pubchem':881}
-
-## Create tfrecords from the embeddings cache/cache.db sqlite table
-for embedding in embeddings:
-    
-    pathlib.Path(f'cache/tfrecord/embedding-{embedding}').mkdir(parents=True, exist_ok=True)
-    
-    T = (tf.int32,tf.string,tf.string,tf.string)
-    Q = f"""SELECT canonical_smiles, arrstr, embedding 
-    FROM embeddings WHERE embedding = '{embedding}' ORDER BY RANDOM() LIMIT 10000"""
-    
-    dataset = tf.data.experimental.SqlDataset("sqlite", "cache/cache.db",Q,T)
-
-    floats = dataset.map(lambda i,smi,arr,emb: 
-        tf.reshape(tf.strings.to_number(tf.strings.split(arr, ",")), (-1, dims[embedding])))
-
-    other = dataset.map(lambda i,smi,arr,emb: (i,smi,emb))
-
-    dataset = tf.data.Dataset.zip((other,floats)).map(lambda x,y: (x[0],x[1],x[2],y))
-
-    tf.data.Dataset.save(dataset, f'cache/tfrecord/embedding-{embedding}')
-
 
 # THERE ARE EXACTLY 320146 UNIQUE SMILES IN THE DATASET
 d1 = tf.data.Dataset.load('cache/tfrecord/embedding-bert')
@@ -58,20 +31,7 @@ sqlite3.register_adapter(np.int32, lambda val: int(val))
 sqlite3.register_adapter(np.int64, lambda val: int(val))
 sqlite3.register_adapter(np.float32, lambda val: float(val))
 
-def sqlstore(tuples):
-    conn = sqlite3.connect('cache/test.db')
-    c = conn.cursor()
-    c.execute("CREATE TABLE IF NOT EXISTS sims (i INTEGER, j INTEGER, sim REAL)")
-    c.executemany("INSERT INTO sims VALUES (?,?,?)", tuples)
-    conn.commit()
-    conn.close()
-    return True
-
-batches = [x for x in d5][0]
-batches = [x.numpy() for x in batches]
-i,j,sim = batches
-tuples = [(x[0],y[0],z[0]) for x,y,z in zip(i,j,sim)]
-sqlstore(tuples)
+batches = [x for x in d5.take(1)][0]
 
 
 def calcit():
