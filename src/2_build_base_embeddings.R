@@ -29,3 +29,9 @@ build_embeddings_table <- (function(){
     keras::k_clear_session()
   })
 })()
+
+# LOG THE NUMBER OF ROWS IN THE EMBEDDINGS FILE FOR DVC DEPENDENCIES=====
+con <- DBI::dbConnect(RSQLite::SQLite(), "cache/cache.db")
+withr::defer({DBI::dbDisconnect(con)})
+rows <- DBI::dbGetQuery(con,"SELECT count(*) FROM embeddings") |> pull(1)
+writeLines(as.character(rows),file("cache/deps/nrows-embeddings.dep"))

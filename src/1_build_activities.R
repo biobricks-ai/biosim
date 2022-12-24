@@ -5,7 +5,7 @@ build_activities <- (function(){
   con <- DBI::dbConnect(RSQLite::SQLite(), "cache/cache.db")
   withr::defer({DBI::dbDisconnect(con)})
   DBI::dbExecute(con, "DROP TABLE IF EXISTS activities")
-  DBI::dbExecute(con, "CREATE TABLE activities(activity_id, stype, property_id, canonical_smiles, standard_value, med_prop_val, value)")
+  DBI::dbExecute(con, "CREATE TABLE activities(activity_id, property_id, canonical_smiles, standard_value, med_prop_val, value)")
   DBI::dbExecute(con, "CREATE unique INDEX idx_activities_id ON activities(activity_id)")
   DBI::dbExecute(con, "CREATE INDEX idx_activities_smiles ON activities(canonical_smiles)")
 
@@ -20,7 +20,16 @@ build_activities <- (function(){
     mutate(stype = paste(assay_id,standard_units,standard_type,sep="-")) |>
     select(stype, canonical_smiles, standard_value)
 
+  train <- train |> group_by(stype,canonical_smiles) |> 
+    summarize(standard_value = median(standard_value)) |> 
+    ungroup()
+
+  stype.ids <- train |> group_by(stype) |> 
+    summarize(property_id = uuid::UUIDgenerate()) |>  
+    ungroup()
+  
   activities <- train |> 
+    inner_join(stype.ids,by="stype") |>
     filter(!is.na(standard_value)) |>
     filter(nchar(canonical_smiles) < 200) |>
     filter(!grepl("[+-.]",canonical_smiles)) |>
@@ -28,12 +37,15 @@ build_activities <- (function(){
       filter(n() > 1000) |> # only keep properties with 1000+ examples
       mutate(med_prop_val=median(standard_value)) |> 
     ungroup() |>
-    mutate(stype = factor(stype, levels=unique(stype))) |>
-    mutate(property_id = as.numeric(stype)) |>
     mutate(value = array(ifelse(standard_value>med_prop_val,1L,0L))) |>
     mutate(activity_id = row_number()) |>
-    select(activity_id, stype, property_id, canonical_smiles, standard_value, med_prop_val, value)
+    select(activity_id, property_id, canonical_smiles, standard_value, med_prop_val, value)
 
   DBI::dbAppendTable(con, "activities", activities)
 })()
 
+# RECORD NUMBER OF ROWS IN ACTIVITIES TABLE ===============================
+con <- DBI::dbConnect(RSQLite::SQLite(), "cache/cache.db")
+withr::defer({DBI::dbDisconnect(con)})
+rows <- DBI::dbGetQuery(con,"SELECT count(*) FROM activities") |> pull(1)
+writeLines(as.character(rows),"cache/deps/nrows-activities.dep")

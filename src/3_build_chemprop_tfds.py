@@ -18,7 +18,8 @@ dims = {'bert':768, 'pubchem':881}
 for emb in embeddings:
   for prop in properties:
 
-    path = pathlib.Path(f'cache/tfrecord/embedding={emb}/pid={prop}')
+    path = pathlib.Path(f'cache/chemprop_tfds/embedding={emb}/pid={prop}')
+    os.remove(path) if path.exists() else None
     path.mkdir(parents=True, exist_ok=True)
     
     # aid, pid, embedding, smiles, array, value

@@ -1,0 +1,10 @@
+---
+---
+
+# Abstract
+
+Chemical embeddings are a powerful tool for representing the chemical structure of molecules as quantitative vectors. Today, researchers often use chemical similarity for the task of estimating unknown chemical hazards, a process called read-across. In read-across methods, chemicals are transformed via a chemical embedding into numeric vectors, and a distance function is used to compare those vectors, chemicals with low distance (or high similarity) to the target compound are used to estimate properties, sometimes by using simple methods like k-nearest neighbors.
+
+A common criticism of read-across methods is that structurally 'similar' compounds sometimes have different properties. This can occur, for example, when properties are highly sensitive to specific aspects of a chemical structural, or when chemical embeddings over or under emphasize (via their numeric encoding) aspects of a chemical tructure. When two chemicals that are highly similar, with respect to a given chemical embedding and distance metric, have distinct properties, it is said that there is an activity cliff, a sudden change in property for a small change in chemical structure.
+
+In this paper, we train "property embeddings" which are embeddings for a chemical based on a given base embedding and a property. These embeddings are designed to minimize their distance from the given base embedding, and to maximize the probability that two compounds with highly similar property embeddings will have the same value for the given property.

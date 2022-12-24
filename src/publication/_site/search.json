@@ -1,0 +1,16 @@
+[
+  {
+    "objectID": "publication.html",
+    "href": "publication.html",
+    "title": "test",
+    "section": "",
+    "text": "This is a test"
+  },
+  {
+    "objectID": "publication.html#quarto",
+    "href": "publication.html#quarto",
+    "title": "test",
+    "section": "Quarto",
+    "text": "Quarto\nQuarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see https://quarto.org."
+  }
+]
