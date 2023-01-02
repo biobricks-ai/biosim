@@ -6,13 +6,13 @@ def build_property_evaluation_tfds(path):
 
     d1 = tf.data.Dataset.load(path)
     d2 = d1.map(lambda a,p,e,s,arr,v: (s,tf.strings.to_hash_bucket_fast(s,100e6),v,arr)).batch(10000)
-    d2 = d2.map(lambda s,v,arr: (s,v,tf.squeeze(arr))).prefetch(tf.data.AUTOTUNE)
+    d2 = d2.map(lambda s,sid,v,arr: (s,sid,v,tf.squeeze(arr))).prefetch(tf.data.AUTOTUNE)
 
-    def build_pairs(si,vi,arri):
-        return d2.map(lambda sj, vj, arrj: (si,sj,vi,vj,arri,arrj))
+    def build_pairs(si,siid,vi,arri):
+        return d2.map(lambda sj, sjid, vj, arrj: (si,sj,siid,sjid,vi,vj,arri,arrj))
     d3 = d2.interleave(build_pairs, cycle_length=8, block_length=1000, 
         num_parallel_calls=tf.data.AUTOTUNE,  deterministic=True)
-    d3 = d3.filter(lambda si,sj,vi,vj,arri,arrj: tf.equal(si < sj))
+    d3 = d3.filter(lambda si,sj,siid,sjid,vi,vj,arri,arrj: tf.less(siid,sjid))
 
     x = next(iter(d3))
     j = next(iter(d2))

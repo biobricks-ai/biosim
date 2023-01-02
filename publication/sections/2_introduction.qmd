@@ -1,0 +1,30 @@
+---
+
+---
+
+# Introduction
+
+<!-- What is the research question or problem being addressed in the study? -->
+Activity cliffs are a phenomenon where chemicals that are highly similar with respect to descriptions of their structure have distinct properties. Structural similarity is dependent on the method used to descibe structure, and the distance metric used to compare structural descriptions. Chemical structures can be defined by embeddings that map a chemical structure (described by atoms and bonds) to a vector of numbers. The spatial landscape described by these embeddings can exhibit rapid changes in property for small changes in chemical structure (activity cliffs) [@maggiora_outliers_2006]. The unpredictability of activity cliffs challenges the basic assertion that the activity of a compound can be derived from it's structure. There is a need to improve the commonly used chemical embeddings to create chemical spaces that are less prone to activity cliffs.
+
+In this study, a method is developed to modify chemical embeddings in order to reduce the occurrence of activity cliffs and improve the explainability of read-across methods. We demonstrate one method of improving upon established chemical embeddings and evaluate the method on a large number of chemical properties derived from toxvaldb, chembl, tox21, and the opera datasets. 
+
+
+<!-- Why is this research question or problem important or relevant? -->
+Read-across methods are in active regulatory use for estimating unkown chemical properties where target compounds are compared to a database of compounds with known properties and the compounds most 'similar' to the target are used to estimate the target compound property. 
+
+<!-- What are the main objectives or goals of the study? -->
+
+<!-- What is the current state of knowledge on the research question or problem? -->
+
+<!-- How does the current study contribute to or advance the current state of knowledge on the research question or problem? -->
+
+<!-- What is the research design or method used to address the research question or problem? -->
+
+<!-- What are the expected results or implications of the study? -->
+
+Chemical embeddings are a powerful tool for representing the chemical structure of molecules as quantitative vectors. Today, researchers often use chemical similarity for the task of estimating unknown chemical hazards, a process called read-across. In read-across methods, chemicals are transformed via a chemical embedding into numeric vectors, and a distance function is used to compare those vectors, chemicals with low distance (or high similarity) to the target compound are used to estimate properties, sometimes by using simple methods like k-nearest neighbors.
+
+A common criticism of read-across methods is that structurally 'similar' compounds sometimes have different properties. This can occur, for example, when properties are highly sensitive to specific aspects of a chemical structural, or when chemical embeddings over or under emphasize (via their numeric encoding) aspects of a chemical tructure. When two chemicals that are highly similar, with respect to a given chemical embedding and distance metric, have distinct properties, it is said that there is an activity cliff, a sudden change in property for a small change in chemical structure.
+
+In this paper, we train "property embeddings" which are embeddings for a chemical based on a given base embedding and a property. These embeddings are designed to minimize their distance from the given base embedding, and to maximize the probability that two compounds with highly similar property embeddings will have the same value for the given property.
