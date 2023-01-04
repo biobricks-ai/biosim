@@ -15,3 +15,8 @@ ggplot(df,aes(x=sim,y=cum_accuracy)) + geom_line() +
   labs(x='Similarity',y='Accuracy') + 
   scale_x_continuous(breaks=seq(0,1,0.1)) +
   scale_y_continuous(breaks=seq(0,1,0.1))
+
+# What figures?
+# 1. Accuracy vs. similarity
+# 2. Accuracy vs. similarity, with a line for the accuracy of the best model
+# 3. networx graph of the best model
