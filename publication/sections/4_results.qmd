@@ -1,0 +1,9 @@
+---
+bibliography: ../biosim.bib
+project:
+  type: default
+  output-dir: _output
+  execute-dir: project
+---
+
+

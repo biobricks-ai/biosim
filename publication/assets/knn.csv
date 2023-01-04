@@ -1,0 +1,7 @@
+dataset ,embedding ,AUC ,IsoDense-AUC, Endpoints
+tox21   ,chembert  ,0.9 ,        0.95, 1001
+tox21   ,pubchem2D ,0.9 ,        0.95, 1001
+toxvaldb,chembert  ,0.9 ,        0.95, 1001
+toxvaldb,pubchem2D ,0.9 ,        0.95, 1001
+chembl,  chembert  ,0.9 ,        0.95, 1001
+chembl,  pubchem2D ,0.9 ,        0.95, 1001

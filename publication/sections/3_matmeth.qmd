@@ -1,0 +1,92 @@
+```{dot}
+digraph prisma {
+    
+  newrank=true;
+  node [shape="box", fontsize = 12, width=2];
+  graph [compound=true,splines=ortho, nodesep=0.25, rankdir=LR];
+
+  
+  subgraph cluster_2 {
+    node [style=filled];
+    G[label="Activities\nSID PID VALUE", fillcolor="steelblue"]
+    P2D[label="Pubchem2D"]
+    BERT[label="Chembert"]
+    H[label="Base Embeddings\nPID EMB VALUE"]
+    I[label="Property Embeddings"]
+    
+    G -> H -> I
+    P2D -> H
+    BERT -> H
+    {rank=same; G; P2D; BERT}
+    label = "C. Embeddings";
+  }
+  
+  subgraph cluster_1 {
+    style=filled;
+    fillcolor=lightgrey;
+    color=black
+
+    node [style=filled,color=black,fillcolor=white];
+    DEP[label="Dependency",  fillcolor="salmon"]
+    D[label="Substances\nSID"]
+    E[label="Properties\nPID"]
+    F[label="Activities\nSID PID VALUE", fillcolor="steelblue"]
+    
+    DEP -> D
+    DEP -> E
+    DEP -> F
+    
+    D -> F
+    E -> F
+    { rank=same; D; E }
+    label = "B. ChemHarmony";
+  }
+  
+  subgraph cluster_0 {
+    node [style=filled; fillcolor="salmon"];
+    ranksep = 0.1
+    A[label="Chembl"]
+    B[label="Tox21"]
+    C[label="Toxvaldb"]
+    
+    A -> B [style=invis]
+    B -> C [style=invis]
+    label = "A. Dependencies";
+  }
+  
+  { rank=same; A; DEP; G}
+}
+```
+
+## Data
+Tox21, Chembl, and ToxvalDB were imported into the 'biosim' repository at github.com/biobricks-ai/biosim with biobricks.ai, a data registry for bioinformatic data assets [@chembl,@tox21,@toxvaldb,@biobricks-ai]. 
+
+## Isometric Dense Layer
+A custom Keras class was created to train approximately isometric dense layers [@keras]. The Isometric Dense layer wraps the base keras dense layer, which is a fully connected layer with one input layer and one output layer whose shape and activation function are given in the layer definition. 
+
+The custom layer takes all the same arguments as the base layer, but adds an additional coefficient argument which is used to scale a custom loss function. 
+
+The isometric dense layer takes two inputs, the first is the input to the base layer, and the second is the layer to approximate isometry. 
+
+The Isometric dense layer adds an additional loss function via the pseudocode given below:
+
+```python
+def call(self, inputs, training=None):
+  
+  in_base, in_iso = inputs # layer takes a base and isometric input
+  
+  # The base input is transformed and normalized using the wrapped `dense` layer
+  output = self.dense.call(in_base)
+  output = soutput / tf.norm(soutput,axis=1,keepdims=True)
+  
+  # The inner product of all rows in the iso and output batch are calculated 
+  inpdif = tf.matmul(in_iso,tf.transpose(in_iso)) 
+  outdif = tf.matmul(output,tf.transpose(output))
+
+  # The isometric loss is the difference between the iso and output inner products
+  self.add_loss(self.coefficient*tf.norm(inpdif - outdif))
+  return soutput
+
+```
+
+## Packages
