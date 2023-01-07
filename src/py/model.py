@@ -36,24 +36,6 @@ class IsoDense(tf.keras.layers.Layer):
         config = {'coefficient': float(self.coefficient)}
         base_config = super(IsoDense, self).get_config()
 
-class DenseCos(tf.keras.layers.Dense):
-    
-    def __init__(self, l2, **kwargs):
-        super(DenseCos, self).__init__(**kwargs)
-        self.l2 = tf.keras.backend.cast_to_floatx(l2)
-
-    def call(self, inputs, training=None):
-        # TODO this doesn't work. DenseL2 works for now, but DenseCos would be better.
-        soutput = super(DenseCos,self).call(inputs)
-        soutput = soutput / tf.norm(soutput, axis=1, keepdims=True)
-        diff = soutput-inputs
-        dist = 1-tf.einsum('ij,ij->i',soutput, inputs)
-        return inputs + tf.minimum(tf.reshape(dist,(-1,1)),self.l2)*diff
-        
-    def get_config(self):
-        config = {'l2': float(self.l2)}
-        base_config = super(DenseCos, self).get_config()
-
 class ProjLayer(tf.keras.layers.Dense):
     
     def __init__(self, l1, **kwargs):
@@ -116,62 +98,3 @@ def less_than_0_frequency(y_true, y_pred):
     y_pred_binary = K.less(y_pred, 0)
     accuracy = K.mean(K.cast(y_pred_binary, 'float32'))
     return accuracy
-
-def build_triplet_model(dim):
-    i = Input(shape=(dim,), name='i')
-    j = Input(shape=(dim,), name='j')
-    k = Input(shape=(dim,), name='k')
-    pid = Input(shape=(1,), name='pid')
-
-    l2  = lambda r: keras.regularizers.l2(r)
-    dp1 = keras.layers.Dropout(0.3, name="dropout")
-    de1 = Dense(256, activation='relu', name='embedding1')
-    de2 = Dense(128, activation='relu', name='embedding')
-    de  = lambda l: de2(de1(dp1(l)))
-
-    ei, ej, ek = (de(i),de(j),de(k))
-
-    # K = keras.backend
-    # def distance(inputs):
-    #     x, y = inputs
-    #     return K.sqrt(K.sum(K.square(x - y), axis=-1))
-
-    # ij = tf.keras.layers.Lambda(distance)([ei,ej])
-    # ik = tf.keras.layers.Lambda(distance)([ei,ek])
-
-    ij = (1-Dot(axes=1,normalize=True,name="pos")([ei,ej]))
-    ik = (1-Dot(axes=1,normalize=True,name="neg")([ei,ek]))
-
-    out = keras.layers.subtract([ij,ik],name="out")
-
-    def triplet_loss(y_true, y_pred):
-        margin = 0.05
-        return tf.maximum(0., margin + y_pred)
-
-    model = Model(inputs=[i,j,k,pid],outputs=out,name="simple-triplet")
-    op = keras.optimizers.Adam(learning_rate=0.001)
-    model.compile(op, loss=triplet_loss, metrics=[less_than_0_frequency])
-    return model
-
-def siamesemodel(dim):
-
-    i = Input(shape=(dim,), name='i')
-    j = Input(shape=(dim,), name='j')
-
-    de3 = Dense(128, activation='tanh', name='embedding3', kernel_regularizer=l2(1e-9))
-    de  = lambda l: de3(dp3(de2(dp2(de1(dp1(l))))))
-
-    ei = de(keras.layers.LayerNormalization(center=False,scale=False)(i))
-    ej = de(keras.layers.LayerNormalization(center=False,scale=False)(j))
-    ek = de(keras.layers.LayerNormalization(center=False,scale=False)(k))
-
-    ij = (1-Dot(axes=1,normalize=True,name="pos")([ei,ej]))
-    ik = (1-Dot(axes=1,normalize=True,name="neg")([ei,ek]))
-
-    out = keras.layers.Dense(1, activation='sigmoid', name='out', trainable=False,
-        kernel_initializer=keras.initializers.ones(), use_bias=False)(ik-ij)
-
-    model = Model(inputs=[i,j,k,pid],outputs=out,name="simple-triplet")
-    optim = keras.optimizers.Adam(learning_rate=1)
-    model.compile(optimizer="nadam", loss=keras.losses.binary_crossentropy)
-    return model

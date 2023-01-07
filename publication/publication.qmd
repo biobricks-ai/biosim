@@ -1,10 +1,41 @@
 ---
-title: test
+title: Biosim - A Suite For Chemical Similarity Tools
 bibliography: biosim.bib
+project:
+  type: default
+  output-dir: _output
+  execute-dir: project
 ---
 
 # Abstract
-<!-- {{< include sections/1_introduction.qmd >}} -->
+{{< include sections/1_abstract.qmd >}}
 
 # Introduction
 {{< include sections/2_introduction.qmd >}}
+
+# Materials and methods
+{{< include sections/3_matmeth.qmd >}}
+
+# Results
+```{r}
+#| label: knn-evaluation
+#| tbl-cap: "Cars"
+#| tbl-colwidths: [60,40]
+#| echo: false
+#| message: false
+#| 
+library(knitr)
+library(tidyverse)
+tbl = readr::read_csv("./assets/knn.csv")
+kable(tbl)
+```
+
+
+# Discussion and conclusion
+{{< include sections/5_discuss_conclude.qmd >}}
+
+
+<!-- TODO
+1. Need ~ 30 references
+2. Need 2-3 figures and tables
+3. write! -->

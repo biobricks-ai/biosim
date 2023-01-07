@@ -1,0 +1,25 @@
+---
+bibliography: ../biosim.bib
+project:
+  type: default
+  output-dir: _output
+  execute-dir: project
+---
+
+# Discussion
+
+Chemical similarity methods can be performant property prediction tools and useful for model explainability. Unfortunately, the premise that similar structure portends similar activity relies hides complexity in the word 'similarity'. When users evaluate chemical hazards, they can be surprised to learn that chemicals with only small differences (even stereoisomers) can have distinct properties [@activitycliffs]. 
+
+Sensitivity to changes in chemical structure is dependent both on the activity being measured and the chemical space being modeled. Ultimately, we expect that chemical structure does account for a large portion of single substance variability in biological activity, but that this relationship is not always well captured by universal embeddings. 
+
+# Conclusions
+
+This study 
+
+1. Demonstrated the value of chemical harmonization techniques for building and evaluating chemical models on a large variety of datasets and chemical endpoints
+
+2. Demonstrated a technique for fine tuning established chemical embeddings to improve their performance on a specific chemical endpoints.
+
+3. Showed that property specific biological embeddings outperform universal embeddings on a variety of chemical endpoints.
+
+4. Demonstrated that a de novo chemical embedding conditioned on biological properties outperforms a universal embedding on a variety of chemical endpoints.

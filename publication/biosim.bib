@@ -1,5 +1,42 @@
+% DATABASES ================================================================================================
+@article{chembl,
+  title={The ChEMBL database in 2017},
+  author={Gaulton, Anna and Hersey, Anne and Nowotka, Micha{\l} and Bento, A Patricia and Chambers, Jon and Mendez, David and Mutowo, Prudence and Atkinson, Francis and Bellis, Louisa J and Cibri{\'a}n-Uhalte, Elena and others},
+  journal={Nucleic acids research},
+  volume={45},
+  number={D1},
+  pages={D945--D954},
+  year={2017},
+  publisher={Oxford University Press}
+}
 
-@article{humer_cheminformatics_2022,
+@misc{toxvaldb,
+  title={ToxValDB: Compiling Publicly Available In Vivo Toxicity Data},
+  author={Judson, Richard},
+  year={2018}
+}
+
+@article{tox21,
+  title={The Tox21 10K compound library: collaborative chemistry advancing toxicology},
+  author={Richard, Ann M and Huang, Ruili and Waidyanatha, Suramya and Shinn, Paul and Collins, Bradley J and Thillainadarajah, Inthirany and Grulke, Christopher M and Williams, Antony J and Lougee, Ryan R and Judson, Richard S and others},
+  journal={Chemical Research in Toxicology},
+  volume={34},
+  number={2},
+  pages={189--216},
+  year={2020},
+  publisher={ACS Publications}
+}
+
+@misc{biobricks-ai,
+	title = {{BioBricks}.ai :: {Managed} bioinformatics pipelines},
+	url = {https://biobricks.ai/},
+	urldate = {2023-01-02},
+	file = {BioBricks.ai \:\: Managed bioinformatics pipelines:/home/thomas/Zotero/storage/39DRXWC5/biobricks.ai.html:text/html},
+}
+
+% MODEL EXPLAINABILITY ===================================================================================
+% Discussion
+@article{ciime_montanari2022,
 	title = {{ChemInformatics} {Model} {Explorer} ({CIME}): exploratory analysis of chemical model explanations},
 	volume = {14},
 	issn = {1758-2946},
@@ -18,7 +55,9 @@
 	file = {Humer et al. - 2022 - ChemInformatics Model Explorer (CIME) exploratory.pdf:/home/thomas/Zotero/storage/AKIA23K6/Humer et al. - 2022 - ChemInformatics Model Explorer (CIME) exploratory.pdf:application/pdf},
 }
 
-@inproceedings{jin_junction_2018,
+% EMBEDDINGS ==============================================================================================
+
+@inproceedings{VAE_juntree,
 	title = {Junction {Tree} {Variational} {Autoencoder} for {Molecular} {Graph} {Generation}},
 	url = {https://proceedings.mlr.press/v80/jin18a.html},
 	abstract = {We seek to automate the design of molecules based on specific chemical properties. In computational terms, this task involves continuous embedding and generation of molecular graphs. Our primary contribution is the direct realization of molecular graphs, a task previously approached by generating linear SMILES strings instead of graphs. Our junction tree variational autoencoder generates molecular graphs in two phases, by first generating a tree-structured scaffold over chemical substructures, and then combining them into a molecule with a graph message passing network. This approach allows us to incrementally expand molecules while maintaining chemical validity at every step. We evaluate our model on multiple tasks ranging from molecular generation to optimization. Across these tasks, our model outperforms previous state-of-the-art baselines by a significant margin.},
@@ -34,46 +73,170 @@
 	file = {Full Text PDF:/home/thomas/Zotero/storage/F9LC7ZEM/Jin et al. - 2018 - Junction Tree Variational Autoencoder for Molecula.pdf:application/pdf;Supplementary PDF:/home/thomas/Zotero/storage/FF2M49BL/Jin et al. - 2018 - Junction Tree Variational Autoencoder for Molecula.pdf:application/pdf},
 }
 
-@article{cronin_scheme_2022,
-	title = {A scheme to evaluate structural alerts to predict toxicity – {Assessing} confidence by characterising uncertainties},
-	volume = {135},
-	issn = {0273-2300},
-	url = {https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9585125/},
-	doi = {10.1016/j.yrtph.2022.105249},
-	abstract = {Structure-activity relationships (SARs) in toxicology have enabled the formation of structural rules which, when coded as structural alerts, are essential tools in in silico toxicology. Whilst other in silico methods have approaches for their evaluation, there is no formal process to assess the confidence that may be associated with a structural alert. This investigation proposes twelve criteria to assess the uncertainty associated with structural alerts, allowing for an assessment of confidence. The criteria are based around the stated purpose, description of the chemistry, toxicology and mechanism, performance and coverage, as well as corroborating and supporting evidence of the alert. Alerts can be given a confidence assessment and score, enabling the identification of areas where more information may be beneficial. The scheme to evaluate structural alerts was placed in the context of various use cases for industrial and regulatory applications. The analysis of alerts, and consideration of the evaluation scheme, identifies the different characteristics an alert may have, such as being highly specific or generic. These characteristics may determine when an alert can be used for specific uses such as identification of analogues for read-across or hazard identification., 
-          
-            
-              •
-              Structural alerts are useful tools for predictive toxicology.
-            
-            
-              •
-              12 criteria to evaluate structural alerts have been identified.
-            
-            
-              •
-              A strategy to determine confidence of structural alerts is presented.
-            
-            
-              •
-              Different use cases require different characteristics of structural alerts.
-            
-            
-              •
-              A Scheme to Evaluate Structural Alerts to Predict Toxicity – Assessing Confidence By Characterising Uncertainties.},
-	urldate = {2022-12-24},
-	journal = {Regulatory Toxicology and Pharmacology},
-	author = {Cronin, Mark T.D. and Bauer, Franklin J. and Bonnell, Mark and Campos, Bruno and Ebbrell, David J. and Firman, James W. and Gutsell, Steve and Hodges, Geoff and Patlewicz, Grace and Sapounidou, Maria and Spînu, Nicoleta and Thomas, Paul C. and Worth, Andrew P.},
-	month = nov,
-	year = {2022},
-	pmid = {36041585},
-	pmcid = {PMC9585125},
-	pages = {105249},
-	file = {Full Text:/home/thomas/Zotero/storage/9KUM3XHP/Cronin et al. - 2022 - A scheme to evaluate structural alerts to predict .pdf:application/pdf},
+@article{mol2vec,
+  title={Mol2vec: unsupervised machine learning approach with chemical intuition},
+  author={Jaeger, Sabrina and Fulle, Simone and Turk, Samo},
+  journal={Journal of chemical information and modeling},
+  volume={58},
+  number={1},
+  pages={27--35},
+  year={2018},
+  publisher={ACS Publications}
 }
 
-@article{maggiora_outliers_2006,
-	title = {On {Outliers} and {Activity} {CliffsWhy} {QSAR} {Often} {Disappoints}},
+@misc{pubchem2d,
+  title={PubChem substructure fingerprint description.},
+  url={ftp://ftp.ncbi.nlm.nih.gov/pubchem/specifications/pubchem_fingerprints.pdf}
+}
+
+@article{chemberta,
+  title={ChemBERTa: large-scale self-supervised pretraining for molecular property prediction},
+  author={Chithrananda, Seyone and Grand, Gabriel and Ramsundar, Bharath},
+  journal={arXiv preprint arXiv:2010.09885},
+  year={2020}
+}
+
+@article{isomaps,
+  title={Deep Isometric Maps},
+  author={Pai, Gautam and Bronstein, Alex and Talmon, Ronen and Kimmel, Ron},
+  journal={Image and Vision Computing},
+  volume={123},
+  pages={104461},
+  year={2022},
+  publisher={Elsevier}
+}
+
+% PACKAGES ==============================================================================================
+@article{cdkit,
+  title={The Chemistry Development Kit (CDK): An open-source Java library for chemo-and bioinformatics},
+  author={Steinbeck, Christoph and Han, Yongquan and Kuhn, Stefan and Horlacher, Oliver and Luttmann, Edgar and Willighagen, Egon},
+  journal={Journal of chemical information and computer sciences},
+  volume={43},
+  number={2},
+  pages={493--500},
+  year={2003},
+  publisher={ACS Publications}
+}
+
+@article{rdkit,
+  title={RDKit: A software suite for cheminformatics, computational chemistry, and predictive modeling},
+  author={Landrum, Greg and others},
+  journal={Greg Landrum},
+  year={2013}
+}
+
+@inproceedings{tensorflow,
+  title={$\{$TensorFlow$\}$: a system for $\{$Large-Scale$\}$ machine learning},
+  author={Abadi, Mart{\'\i}n and Barham, Paul and Chen, Jianmin and Chen, Zhifeng and Davis, Andy and Dean, Jeffrey and Devin, Matthieu and Ghemawat, Sanjay and Irving, Geoffrey and Isard, Michael and others},
+  booktitle={12th USENIX symposium on operating systems design and implementation (OSDI 16)},
+  pages={265--283},
+  year={2016}
+}
+
+@misc{keras,
+	title = {Keras: {Deep} {Learning} for humans},
+	copyright = {Apache-2.0},
+	shorttitle = {Keras},
+	url = {https://github.com/keras-team/keras},
+	abstract = {Deep Learning for humans},
+	urldate = {2023-01-03},
+	publisher = {Keras},
+	month = jan,
+	year = {2023},
+	note = {original-date: 2015-03-28T00:35:42Z},
+	keywords = {data-science, deep-learning, machine-learning, neural-networks, python, tensorflow},
+}
+
+% NEED ===============================================================================================
+
+%Pubchem2D is used by the pubchem service to perform similarity search
+@article{kim2016pubchem,
+  title={PubChem substance and compound databases},
+  author={Kim, Sunghwan and Thiessen, Paul A and Bolton, Evan E and Chen, Jie and Fu, Gang and Gindulyte, Asta and Han, Lianyi and He, Jane and He, Siqian and Shoemaker, Benjamin A and others},
+  journal={Nucleic acids research},
+  volume={44},
+  number={D1},
+  pages={D1202--D1213},
+  year={2016},
+  publisher={Oxford University Press}
+}
+
+@article{reach_luechtefeld2016,
+  title={Global analysis of publicly available safety data for 9,801 substances registered under REACH from 2008--2014},
+  author={Luechtefeld, Thomas and Maertens, Alexandra and Russo, Daniel P and Rovida, Costanza and Zhu, Hao and Hartung, Thomas},
+  journal={Altex},
+  volume={33},
+  number={2},
+  pages={95},
+  year={2016},
+  publisher={NIH Public Access}
+}
+
+@article{mltox_alves,
+  title={A perspective and a new integrated computational strategy for skin sensitization assessment},
+  author={Alves, Vinicius M and Capuzzi, Stephen J and Braga, Rodolpho C and Borba, Joyce VB and Silva, Arthur C and Luechtefeld, Thomas and Hartung, Thomas and Andrade, Carolina Horta and Muratov, Eugene N and Tropsha, Alexander},
+  journal={ACS Sustainable Chemistry \& Engineering},
+  volume={6},
+  number={3},
+  pages={2845--2859},
+  year={2018},
+  publisher={American Chemical Society}
+}
+
+@article{mltox_luechtefeld,
+  title={Big-data and machine learning to revamp computational toxicology and its use in risk assessment},
+  author={Luechtefeld, Thomas and Rowlands, Craig and Hartung, Thomas},
+  journal={Toxicology research},
+  volume={7},
+  number={5},
+  pages={732--744},
+  year={2018},
+  publisher={Oxford University Press}
+}
+
+@article{regulatory_chesnut,
+  title={Regulatory acceptance of read-across},
+  author={Chesnut, Megan and Yamada, Takashi and Adams, Timothy and Knight, Derek and Kleinstreuer, Nicole and Kass, George and Luechtefeld, Thomas and Hartung, Thomas and Maertens, Alexandra},
+  journal={ALTEX-Alternatives to animal experimentation},
+  volume={35},
+  number={3},
+  pages={413--419},
+  year={2018}
+}
+
+@article{mltox_luechtefeld,
+  title={Machine learning of toxicological big data enables read-across structure activity relationships (RASAR) outperforming animal test reproducibility},
+  author={Luechtefeld, Thomas and Marsh, Dan and Rowlands, Craig and Hartung, Thomas},
+  journal={Toxicological Sciences},
+  volume={165},
+  number={1},
+  pages={198--212},
+  year={2018},
+  publisher={Oxford University Press}
+}
+
+@article{catmos_mansouri,
+  title={CATMoS: collaborative acute toxicity modeling suite},
+  author={Mansouri, Kamel and Karmaus, Agnes L and Fitzpatrick, Jeremy and Patlewicz, Grace and Pradeep, Prachi and Alberga, Domenico and Alepee, Nathalie and Allen, Timothy EH and Allen, Dave and Alves, Vinicius M and others},
+  journal={Environmental health perspectives},
+  volume={129},
+  number={4},
+  pages={047013},
+  year={2021}
+}
+
+
+@incollection{food_fu,
+  title={The use of artificial intelligence and big data for the safety evaluation of US food-relevant chemicals},
+  author={Fu, Yuqi and Luechtefeld, Thomas and Karmaus, Agnes and Hartung, Thomas},
+  booktitle={Present Knowledge in Food Safety},
+  pages={575--589},
+  year={2023},
+  publisher={Academic Press}
+}
+
+@article{activitycliffs,
+	title = {On Outliers and Activity Cliffs Why QSAR Often Disappoints},
 	volume = {46},
 	issn = {1549-9596},
 	url = {https://doi.org/10.1021/ci060117s},
