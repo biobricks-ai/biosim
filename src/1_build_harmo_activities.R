@@ -1,6 +1,9 @@
 pacman::p_load(biobricks, arrow, tidyverse, magrittr)
-brick_install("chemharmony")
-brick_pull("chemharmony")
-brick_remove("chemharmony")
-
-activities <- brick_load("chemharmony")$activities.parquet
+# biobricks::initialize()
+# brick_install("chemharmony")
+# brick_pull("chemharmony")
+# brick_remove("chemharmony")
+# brick_repro("chemharmony")
+chemharmony <- brick_load("chemharmony")
+activities <- chemharmony$harmonized$activities.parquet |> collect()
+head(activities)
