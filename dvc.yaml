@@ -1,14 +1,7 @@
 stages:
   build_activities:
-    cmd: Rscript src/1_build_activities.R
+    cmd: python 1_activity_embeddings_tfds.py
     deps:
-      - src/1_build_activities.R
+      - src/1_activity_embeddings_tfds.py
     outs:
-      - cache/train.csv
-  build_model:
-    cmd: Rscript src/2_build_model.R
-    deps: 
-      - src/2_build_model.R
-      - cache/train.csv
-    outs:
-      - brick/one_hot_triplet.hdf5
+      - cache/tfdatasets/activity_embedding

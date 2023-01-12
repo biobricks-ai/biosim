@@ -4,5 +4,5 @@
     dir = ../../../cache
     shared = group
     type = symlink
-['remote "biobricks.ai"']
-    url = https://dvc.biobricks.ai
+[remote "s3.biobricks.ai"]
+  url = s3://ins-dvc/insdvc
