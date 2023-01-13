@@ -8,6 +8,6 @@ stages:
       size: 4040
     outs:
     - path: cache/tfdatasets/activity_embedding
-      md5: 239f5166c9bb5fa20b534517eec80e8b.dir
-      size: 48522037115
-      nfiles: 4
+      md5: 631371d0f5e82c940de7d49457ac1745.dir
+      size: 18965971414
+      nfiles: 3
