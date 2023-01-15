@@ -1,6 +1,9 @@
 # biosim
 Supervised biological similarity models built for distribution with biobricks
 
+# DEVELOPMENT
+Follow instructions at https://www.tensorflow.org/install/pip#step-by-step_instructions to install tensorflow in a conda environment. 
+
 # Workflow
 ```
 ```

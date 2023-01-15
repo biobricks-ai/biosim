@@ -1,0 +1,3 @@
+[submodule "submodules/ChemBERTa-zinc-base-v1"]
+	path = submodules/ChemBERTa-zinc-base-v1
+	url = https://huggingface.co/seyonec/ChemBERTa-zinc-base-v1

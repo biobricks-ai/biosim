@@ -1,100 +1,107 @@
 import pathlib as pl, sqlite3, math, numpy as np, re, os
 import keras, tensorflow as tf
-from keras.layers import Input, Dense, Lambda, Dot
+import pandas as pd
+from keras.layers import Input, Dense, Lambda, Dot, Embedding, Flatten, Multiply, Concatenate, Dropout
+from keras.callbacks import EarlyStopping, TensorBoard
+from keras.regularizers import l1
 from keras.models import Model
 import keras.backend as K
-import functools
+import functools, types, atexit
+import sklearn as sk
+from sklearn.model_selection import GridSearchCV
+import importlib
+from src.py import model as arch
+from tensorboard.plugins.hparams import api as hp
+import itertools, random
 
-
-        # diff = soutput-inputs
-        # dist = tf.norm(diff,axis=1,keepdims=True) # 0 1. 0.01 should become 0, 0.1, 0.01
-        # dist = tf.maximum(1e-8, dist)
-        # res =  tf.minimum(dist,self.l2)*diff / dist + inputs
-        # self.add_loss(0.0001*tf.reduce_mean(tf.square(inputs-soutput)))
-        
-class IsoDense(tf.keras.layers.Layer):
-
-    def __init__(self, units, coefficient, activation, **kwargs):
-        super(IsoDense, self).__init__(**kwargs)
-        self.coefficient = tf.keras.backend.cast_to_floatx(coefficient)
-        self.units = units
-        self.activation = activation
-        self.dense = tf.keras.layers.Dense(self.units, activation=self.activation)
-
-    def build(self, input_shape):
-        self.dense.build(input_shape[0])
-        
-    def call(self, inputs, training=None):
-        soutput = self.dense.call(inputs[0])
-        soutput = soutput / tf.norm(soutput,axis=1,keepdims=True)
-        inpdif = tf.matmul(inputs[1],tf.transpose(inputs[1]))
-        outdif = tf.matmul(soutput,tf.transpose(soutput))
-        self.add_loss(self.coefficient*tf.norm(inpdif - outdif))
-        return soutput
-        
-    def get_config(self):
-        config = {'coefficient': float(self.coefficient)}
-        base_config = super(IsoDense, self).get_config()
-
-class ProjLayer(tf.keras.layers.Dense):
+def isometric_loss(y_true, y_pred):
     
-    def __init__(self, l1, **kwargs):
-        super(ProjLayer, self).__init__(**kwargs)
-        self.l1 = tf.keras.backend.cast_to_floatx(l1)
+    coef, margin = 10, 0.0
+    y_pred = y_pred / tf.norm(y_pred, axis=1, keepdims=True)
+    y_true = y_true / tf.norm(y_true, axis=1, keepdims=True)
 
-    def call(self, inputs, training=None):
-        output = super(ProjLayer,self).call(inputs) #+ 0.00001
-        outsum = tf.reduce_sum(output,axis=1,keepdims=True)
-        return output/outsum
-    
-    def get_config(self):
-        config = {'l1': float(self.l1)}
-        base_config = super(ProjLayer, self).get_config()
+    inpdif = tf.matmul(y_true,tf.transpose(y_true))
+    predif = tf.matmul(y_pred,tf.transpose(y_pred))
+    reldif = tf.square(inpdif - predif)
+    return coef*reldif
 
-def transfer_ff(dim,natoms=10):
-    i = Input(shape=(dim,), name='i')
-    p = Input(shape=(1,), name='pid')
-    
-    pe = keras.layers.Embedding(input_dim=500, output_dim=natoms, input_length=1,name="pid_embedding1",embeddings_initializer=keras.initializers.uniform(0,1))(p)
-    pr = keras.layers.Flatten()(pe)
-    pr = ProjLayer(units=natoms, l1=0.01, activation='relu', name='pid_embedding')(pr)
-    
-    # map each atom to an output layer
-    def make_atom(atomi):
-        return IsoDense(units=768, activation='tanh', coefficient=0.1,name=f"atom_{atomi}")(i)
-    
-    atoms = [make_atom(atomi) for atomi in range(natoms)]
-    atoms = keras.layers.Concatenate(axis=1)(atoms)
-    atoms = keras.layers.Reshape((natoms,768))(atoms)
-    
-    projection = keras.layers.Dot(axes=1,name="chem_embedding")([pr,atoms])
-    dp = keras.layers.Dropout(0.66, name="dropout")(projection)
-    out = Dense(1, activation='sigmoid', name='out', kernel_regularizer=keras.regularizers.l2())(dp)
-    
-    model = Model(inputs=[i,p],outputs=out,name="ff")
-    model.compile("adam", loss="binary_crossentropy", metrics=["accuracy"])
-    return model
+W1 = hp.HParam('num_units', hp.Discrete([250, 500, 1000, 2000]))
+COMBINE = hp.HParam('combine', hp.Discrete(['concat','mult']))
+ACTIVATION = hp.HParam('activation', hp.Discrete(['relu','tanh','sigmoid']))
+DEPTH = hp.HParam('depth', hp.Discrete([4,8]))
+DROPOUT = hp.HParam('dropout', hp.Discrete([0.3,0.4]))
+EMB_L1 = hp.HParam('emb_l1', hp.Discrete([0.0,1e-3,1e-5]))
+LEARNING_RATE = hp.HParam('learning_rate', hp.Discrete([0.001,0.0001]))
+PREPOST = hp.HParam('prepost', hp.Discrete(['pre','post']))
+HP = [W1, PREPOST, COMBINE, DEPTH, DROPOUT, EMB_L1, LEARNING_RATE, ACTIVATION]
 
-def feedforward(dim):
-    i = Input(shape=(dim,), name='i')
+def train_test_model(dim,HP):
+    # HP = { W1: 100, COMBINE: 'mult', DROPOUT: 0.1, DEPTH: 2, LEARNING_RATE: 0.001 }
 
-    seq = [
-        keras.layers.Dropout(0.33),
-        Dense(units=256, activation='relu'),
-        keras.layers.Dropout(0.33),
-        Dense(units=128, activation='relu'),
-    ]
-    
-    out = functools.reduce(lambda x,y: y(x), seq, i)
-    out = IsoDense(units=10, activation='relu', name='embedding', coefficient=0.01)([out,i])
-    out = keras.layers.BatchNormalization()(out)
-    out = Dense(1, activation='sigmoid', name='out')(out)
-    
-    model = Model(inputs=[i],outputs=out,name="ff")
-    model.compile("adam", loss="binary_crossentropy", metrics=["accuracy"])
-    return model
+    conc = Multiply() if HP[COMBINE]=="mult" else Concatenate()
 
-def less_than_0_frequency(y_true, y_pred):    
-    y_pred_binary = K.less(y_pred, 0)
-    accuracy = K.mean(K.cast(y_pred_binary, 'float32'))
-    return accuracy
+    inp = Input(shape=(dim,), name='i')
+    in1 = Dense(units=HP[W1], activation="relu", name="i1")(inp)
+    pid = Input(shape=(1,), name='pid')
+
+    pe = Embedding(name="pid_embedding1", 
+        input_dim=500, output_dim=HP[W1], input_length=1, 
+        embeddings_regularizer=l1(HP[EMB_L1]))(pid)
+
+    pe = Flatten(name="pid_embedding")(pe)
+
+    at = conc([pe,in1]) if HP[PREPOST]=="pre" else in1
+    for i in range(HP[DEPTH]):
+        at = Dense(units=HP[W1],activation="relu",name=f"d{i}")(at)
+        at = Dropout(HP[DROPOUT])(at)
+
+    at = at if HP[PREPOST]=="pre" else conc([pe,at])
+    em = Dense(units=500,activation=HP[ACTIVATION],name=f"embedding")(at)
+    at = Dropout(HP[DROPOUT])(em)
+
+    out = Dense(1, activation='sigmoid', name='out')(at)
+    
+    model = Model(inputs=[inp,pid],outputs=[out,em],name="isomulti")
+    model.compile(
+        keras.optimizers.Adam(learning_rate=HP[LEARNING_RATE]), 
+        loss={"out":"binary_crossentropy","embedding":arch.isometric_loss}, 
+        metrics={"out":"accuracy"})
+
+    tenboard = TensorBoard(log_dir='./logs')
+    patience = EarlyStopping(patience=3,restore_best_weights=True)
+    model.fit(btrn, epochs=100, steps_per_epoch=tstp, batch_size=bdim,
+        validation_data=bval, validation_steps=vstp, verbose=1,
+        callbacks=[tenboard,patience])
+    
+    return model.evaluate(bval,steps=vstp,verbose=0)[3]
+
+def param_search():
+
+    os.system('rm -r logs')
+    allvals = [h.domain.values for h in HP]
+    prod = list(itertools.product(*allvals))
+    random.shuffle(prod)
+
+    df = pd.DataFrame(prod,columns=[h.name for h in HP])
+    df['accuracy'] = df.index*0.0
+
+    def run(session_number, run_dir, hparams):
+        print(f"params are {hparams}")
+        with tf.summary.create_file_writer(run_dir).as_default():
+            hp.hparams(hparams)  # record the values used in this trial
+            accuracy = train_test_model(768,hparams)
+
+            # write to csv and to tensorboard
+            df.loc[session_number,'accuracy'] = accuracy
+            df.to_csv("logs/hparam_tuning.csv",index=False)
+            tf.summary.scalar("accuracy", accuracy, step=2)
+
+    session_num = 0
+
+    for session_num, values in enumerate(prod):
+        hparams = {h:v for h,v in zip(HP,values)}
+        run_name = "run-%d" % session_num
+        print('--- Starting trial: %s' % run_name)
+        print({h.name: hparams[h] for h in hparams})
+        run(session_num, 'logs/hparam_tuning/' + run_name, hparams)
+        session_num += 1
