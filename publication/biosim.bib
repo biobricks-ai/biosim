@@ -251,3 +251,133 @@
 	pages = {1535--1535},
 	file = {ACS Full Text Snapshot:/home/thomas/Zotero/storage/B452E5HM/ci060117s.html:text/html;Full Text PDF:/home/thomas/Zotero/storage/ZEBHVH6K/Maggiora - 2006 - On Outliers and Activity CliffsWhy QSAR Often Disa.pdf:application/pdf},
 }
+
+%Example of QSAR that use mol2vec
+@article{Li2021,
+   abstract = {Carcinogenicity testing plays an essential role in identifying carcinogens in environmental chemistry and drug development. However, it is a time-consuming and label-intensive process to evaluate the carcinogenic potency with conventional 2-years rodent animal studies. Thus, there is an urgent need for alternative approaches to providing reliable and robust assessments on carcinogenicity. In this study, we proposed a DeepCarc model to predict carcinogenicity for small molecules using deep learning-based model-level representations. The DeepCarc Model was developed using a data set of 692 compounds and evaluated on a test set containing 171 compounds in the National Center for Toxicological Research liver cancer database (NCTRlcdb). As a result, the proposed DeepCarc model yielded a Matthews correlation coefficient (MCC) of 0.432 for the test set, outperforming four advanced deep learning (DL) powered quantitative structure-activity relationship (QSAR) models with an average improvement rate of 37%. Furthermore, the DeepCarc model was also employed to screen the carcinogenicity potential of the compounds from both DrugBank and Tox21. Altogether, the proposed DeepCarc model could serve as an early detection tool (https://github.com/TingLi2016/DeepCarc) for carcinogenicity assessment.},
+   author = {Ting Li and Weida Tong and Ruth Roberts and Zhichao Liu and Shraddha Thakkar},
+   doi = {10.3389/frai.2021.757780},
+   issn = {26248212},
+   journal = {Frontiers in Artificial Intelligence},
+   keywords = {NCTRlcdb,QSAR,carcinogenicity,deep learning,non-animal models},
+   month = {11},
+   publisher = {Frontiers Media S.A.},
+   title = {DeepCarc: Deep Learning-Powered Carcinogenicity Prediction Using Model-Level Representation},
+   volume = {4},
+   year = {2021},
+}
+
+%SMILES original pub
+@article{Weininger1988,
+   author = {David Weininger},
+   doi = {10.1021/ci00057a005},
+   issn = {1549-9596},
+   issue = {1},
+   journal = {Journal of Chemical Information and Modeling},
+   month = {2},
+   pages = {31-36},
+   title = {SMILES, a chemical language and information system. 1. Introduction to methodology and encoding rules},
+   volume = {28},
+   year = {1988},
+}
+
+%embedding 
+@article{Coley2017,
+   author = {Connor W. Coley and Regina Barzilay and William H. Green and Tommi S. Jaakkola and Klavs F. Jensen},
+   doi = {10.1021/acs.jcim.6b00601},
+   issn = {1549-9596},
+   issue = {8},
+   journal = {Journal of Chemical Information and Modeling},
+   month = {8},
+   pages = {1757-1772},
+   title = {Convolutional Embedding of Attributed Molecular Graphs for Physical Property Prediction},
+   volume = {57},
+   year = {2017},
+}
+
+%Tox model with deep learning 
+@article{Mayr2016,
+   author = {Andreas Mayr and Günter Klambauer and Thomas Unterthiner and Sepp Hochreiter},
+   doi = {10.3389/fenvs.2015.00080},
+   issn = {2296-665X},
+   journal = {Frontiers in Environmental Science},
+   month = {2},
+   title = {DeepTox: Toxicity Prediction using Deep Learning},
+   volume = {3},
+   year = {2016},
+}
+
+%explore chemical space with deep learning - not sure relevant
+@article{Vogt2022,
+   author = {Martin Vogt},
+   doi = {10.1080/17460441.2022.2019704},
+   issn = {1746-0441},
+   issue = {3},
+   journal = {Expert Opinion on Drug Discovery},
+   month = {3},
+   pages = {297-304},
+   title = {Using deep neural networks to explore chemical space},
+   volume = {17},
+   year = {2022},
+}
+
+@article{Nasser2020,
+   abstract = {<p>Virtual screening (VS) is a computational practice applied in drug discovery research. VS is popularly applied in a computer-based search for new lead molecules based on molecular similarity searching. In chemical databases similarity searching is used to identify molecules that have similarities to a user-defined reference structure and is evaluated by quantitative measures of intermolecular structural similarity. Among existing approaches, 2D fingerprints are widely used. The similarity of a reference structure and a database structure is measured by the computation of association coefficients. In most classical similarity approaches, it is assumed that the molecular features in both biological and non-biologically-related activity carry the same weight. However, based on the chemical structure, it has been found that some distinguishable features are more important than others. Hence, this difference should be taken consideration by placing more weight on each important fragment. The main aim of this research is to enhance the performance of similarity searching by using multiple descriptors. In this paper, a deep learning method known as deep belief networks (DBN) has been used to reweight the molecule features. Several descriptors have been used for the MDL Drug Data Report (MDDR) dataset each of which represents different important features. The proposed method has been implemented with each descriptor individually to select the important features based on a new weight, with a lower error rate, and merging together all new features from all descriptors to produce a new descriptor for similarity searching. Based on the extensive experiments conducted, the results show that the proposed method outperformed several existing benchmark similarity methods, including Bayesian inference networks (BIN), the Tanimoto similarity method (TAN), adapted similarity measure of text processing (ASMTP) and the quantum-based similarity method (SQB). The results of this proposed multi-descriptor-based on Stack of deep belief networks method (SDBN) demonstrated a higher accuracy compared to existing methods on structurally heterogeneous datasets.</p>},
+   author = {Maged Nasser and Naomie Salim and Hentabli Hamza and Faisal Saeed and Idris Rabiu},
+   doi = {10.3390/molecules26010128},
+   issn = {1420-3049},
+   issue = {1},
+   journal = {Molecules},
+   month = {12},
+   pages = {128},
+   title = {Improved Deep Learning Based Method for Molecular Similarity Searching Using Stack of Deep Belief Networks},
+   volume = {26},
+   year = {2020},
+}
+
+%Limitation activity cliff - probably can be used in discussion
+@article{,
+   author = {Derek van Tilborg and Alisa Alenicheva and Francesca Grisoni},
+   doi = {10.1021/acs.jcim.2c01073},
+   issn = {1549-9596},
+   issue = {23},
+   journal = {Journal of Chemical Information and Modeling},
+   month = {12},
+   pages = {5938-5951},
+   title = {Exposing the Limitations of Molecular Machine Learning with Activity Cliffs},
+   volume = {62},
+   year = {2022},
+}
+
+%activity cliff and deep learning
+@article{Winkler2017,
+   author = {David A. Winkler and Tu C. Le},
+   doi = {10.1002/minf.201600118},
+   issn = {18681743},
+   issue = {1-2},
+   journal = {Molecular Informatics},
+   month = {1},
+   pages = {1600118},
+   title = {Performance of Deep and Shallow Neural Networks, the Universal Approximation Theorem, Activity Cliffs, and QSAR},
+   volume = {36},
+   year = {2017},
+}
+
+% if can go somewhere probably not
+@article{Borrel2020,
+   abstract = {The U.S. federal consortium on toxicology in the 21 st century (Tox21) produces quantitative, high-throughput screening (HTS) data on thousands of chemicals across a wide range of assays covering critical biological targets and cellular pathways. Many of these assays, and those used in other in vitro screening programs, rely on luciferase and fluorescence-based readouts that can be susceptible to signal interference by certain chemical structures resulting in false positive outcomes. Included in the Tox21 portfolio are assays specifically designed to measure interference in the form of luciferase inhibition and autofluorescence via multiple wavelengths (red, blue, and green) and under various conditions (cell-free and cell-based, two cell types). Out of 8,305 chemicals tested in the Tox21 interference assays, percent actives ranged from 0.5% (red autofluorescence) to 9.9% (luciferase inhibition). Self-organizing maps and hierarchical clustering were used to relate chemical structural clusters to interference activity profiles. Multiple machine learning algorithms were applied to predict assay interference based on molecular descriptors and chemical properties. The best performing predictive models (accuracies of ~80%) have been included in a web-based tool called InterPred that will allow users to predict the likelihood of assay interference for any new chemical structure and thus increase confidence in HTS data by decreasing false positive testing results.},
+   author = {Alexandre Borrel and Ruili Huang and Srilatha Sakamuru and Menghang Xia and Anton Simeonov and Kamel Mansouri and Keith A Houck and Richard S Judson and Nicole C Kleinstreuer},
+   doi = {10.1038/s41598-020-60747-3},
+   isbn = {4159802060},
+   issn = {2045-2322},
+   issue = {1},
+   journal = {Scientific Reports},
+   month = {12},
+   pages = {3986},
+   pmid = {32132587},
+   publisher = {Springer US},
+   title = {High-Throughput Screening to Predict Chemical-Assay Interference},
+   volume = {10},
+   url = {http://dx.doi.org/10.1038/s41598-020-60747-3 http://www.nature.com/articles/s41598-020-60747-3 http://www.ncbi.nlm.nih.gov/pubmed/32132587 http://www.pubmedcentral.nih.gov/articlerender.fcgi?artid=PMC7055224},
+   year = {2020},
+}
