@@ -1,7 +1,14 @@
 stages:
   build_activities:
-    cmd: python 1_activity_embeddings_tfds.py
+    cmd: python src/1_activity_embeddings_tfds.py
     deps:
       - src/1_activity_embeddings_tfds.py
     outs:
       - cache/tfdatasets/activity_embedding
+  build_model:
+    cmd: python src/2_supervised_embedding.py
+    deps:
+      - src/2_supervised_embedding.py
+      - cache/tfdatasets/activity_embedding
+    outs:
+      - cache/h5model/siamese.h5

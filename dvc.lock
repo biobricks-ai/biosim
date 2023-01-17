@@ -1,7 +1,7 @@
 schema: '2.0'
 stages:
   build_activities:
-    cmd: python 1_activity_embeddings_tfds.py
+    cmd: python src/1_activity_embeddings_tfds.py
     deps:
     - path: src/1_activity_embeddings_tfds.py
       md5: 62efa29d4bed8b7189f39f191e85ec8f
@@ -11,3 +11,17 @@ stages:
       md5: 631371d0f5e82c940de7d49457ac1745.dir
       size: 18965971414
       nfiles: 3
+  build_model:
+    cmd: python src/2_supervised_embedding.py
+    deps:
+    - path: cache/tfdatasets/activity_embedding
+      md5: 631371d0f5e82c940de7d49457ac1745.dir
+      size: 18965971414
+      nfiles: 3
+    - path: src/2_supervised_embedding.py
+      md5: a4f8648ef4f1b4b0547e8c01fcd90a6c
+      size: 3144
+    outs:
+    - path: cache/h5model/siamese.h5
+      md5: 8bb80826d5eda968bd4cc9203d925c83
+      size: 5602048
