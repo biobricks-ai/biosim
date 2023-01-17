@@ -3,42 +3,50 @@ import pathlib as pl, math, numpy as np, timeit
 import re, tensorflow as tf, pandas as pd
 
 def knn(path):
-    path = "cache/chemprop_tfds/embedding=bert/pid=84253fff-8d28-4db4-b641-2938dd29db48"
-    path = "cache/chemprop_tfds/embedding=isodense/pid=84253fff-8d28-4db4-b641-2938dd29db48"
     
-    d1 = tf.data.Dataset.load(path) # aid, pid, emb, smiles, array, value
-    d1 = d1.map(lambda a,p,e,s,arr,v: (tf.squeeze(arr),v)).cache()
-    cmp = d1.batch(10000)
+    embedding = "chembert"
+    d1 = src.filter(lambda x: x['pidnum'] == 1)
+    d1 = d1.map(lambda x: (x[embedding],x['binvalue'])).cache()
+    d1card = 0
+    for i,x in enumerate(d1): 
+        print(i)
+        d1card = i
+    cmp = d1.batch(d1card).cache()
 
-    batch = next(iter(cmp))
     x = next(iter(d1))
-    ai = x[0] 
+    batch = next(iter(cmp))
 
     @tf.function
     def knn(ai,vi):
         
         def knn_map(aj,vj):
-            bsim = tf.tensordot(ai,tf.transpose(aj),axes=1)
+            nai = tf.linalg.l2_normalize(ai)
+            naj = tf.linalg.l2_normalize(aj,axis=1)
+            bsim = tf.tensordot(nai,tf.transpose(naj),axes=1)
             maxsim,maxidx = tf.nn.top_k(bsim, k=5,sorted=False)
             maxval = tf.gather(vj, indices=maxidx)
             return (maxsim, maxval)
 
         def knn_red(agg, row):
             sims, vals = row
-            ind = tf.where(tf.logical_and(tf.less(sims,0.999),tf.greater(sims,0.9)))
+            ind = tf.where(tf.logical_and(tf.less(sims,0.999),tf.greater(sims,0.7)))
             sims = tf.squeeze(tf.gather(sims, ind))
             sims = tf.concat([sims,agg[0]],axis=0)
             vals = tf.squeeze(tf.gather(vals, ind))
             vals = tf.concat([vals,agg[1]],axis=0)
             return (sims,vals,agg[2]+tf.shape(vals)[0])
 
-        init = (tf.constant([],dtype=tf.float32),tf.constant([],dtype=tf.int32),0)
+        init = (tf.constant([],dtype=tf.float32),tf.constant([],dtype=tf.float32),0)
+        cmap = cmp.map(knn_map)
+
         return cmp.map(knn_map).reduce(init,knn_red)
 
     @tf.function
     def vote(sims,vals):
         weights = tf.tensordot(sims,tf.cast(vals,dtype=tf.float32),axes=1)
         return tf.reduce_sum(weights)/tf.reduce_sum(sims)
+
+    knn(x[0],tf.cast(x[1],dtype=tf.float32))
     d2 = d1.map(lambda ai,vi: (knn(ai,vi),vi)).filter(lambda x,y: tf.greater(x[2],0))
     d2 = d2.map(lambda x,y: (vote(x[0],x[1]),y))
     
@@ -106,27 +114,3 @@ def build_property_evaluation_tfds(path):
     df = pd.DataFrame({'pid': pid, 'embedding': emb, 'sim': sim, 'correct': C, 'N': T})
 
     df.to_csv(dfpath, mode='a', header=False, index=False)
-
-
-pat = re.compile('.*/pid=[0-9.]+$')
-tfpaths = (p.as_posix() for p in pl.Path('cache/chemprop_tfds').glob('**/') if pat.match(p.as_posix()))
-
-dfpath = 'cache/evalsims.csv'
-
-# delete dfpath if it already exists
-if os.path.exists(dfpath):
-    os.remove(dfpath)
-
-# write a header line to dfpath
-pd.DataFrame({'pid':[], 'embedding':[], 'sim':[], 'correct':[], 'N':[]}).to_csv(dfpath, index=False)
-
-for path in tfpaths:
-    build_property_evaluation_tfds(path)
-
-# 1. rebuild the chemprop tfds into one large dataset for each embedding
-# 2. reduce this dataset into
-#    a. a dictionary of counts of correct/incorrect predictions for knn predictions
-# How to test this?
-# 1. build knn 
-# 2. test knn on existing base paths
-# 3. test knn on supervised model path

@@ -10,19 +10,21 @@ from src.py import model as arch
 # def train_transfer_ff(trn,val):
 
 src = tf.data.Dataset.load("cache/tfdatasets/activity_embedding").shuffle(100000)
+def munge_src(row):
+    row['pidnum'] = tf.cast(row['pidnum'],tf.int64)
+    return row
+src = src.map(munge_src)
 
-chunk = math.ceil(src.cardinality().numpy()*0.1)
-trn = src.take(8*chunk).cache()
-val = src.skip(8*chunk).take(chunk).cache()
-hld = src.skip(9*chunk).cache()
+def pid_batches(ds,batchsize = 10000): 
+    return ds.group_by_window(
+        key_func = lambda x: x['pidnum'],  
+        reduce_func = lambda _,batch: batch.batch(batchsize),
+        window_size = batchsize)
 
-xtrn = next(iter(trn.batch(100)))
-
-embedding = "emb_chembert"
-# embedding = "emb_pubchem2d" 
-dim = tf.shape(next(iter(trn))[embedding]).numpy()[0]
-maxpidnum = 500 #trn.reduce(0., lambda x,y: tf.maximum(x,y['pidnum'])).numpy()
+embedding="emb_chembert"
 bdim = 10000
+dim = tf.shape(next(iter(src))[embedding]).numpy()[0]
+maxpidnum = 500 #trn.reduce(0., lambda x,y: tf.maximum(x,y['pidnum'])).numpy()
 
 def munge_trn(row):
     x = tf.reshape(row[embedding],(bdim,dim))
@@ -30,32 +32,42 @@ def munge_trn(row):
     y = tf.reshape(row['binvalue'],(bdim,1))
     return ((x,p),(y,x))
 
-tstp = math.floor(trn.cardinality().numpy()/bdim)
-btrn = trn.batch(bdim).take(tstp).map(munge_trn).cache().repeat().prefetch(tf.data.AUTOTUNE)
+chunk = math.ceil(src.cardinality().numpy()*0.1)
+
+trn  = pid_batches(src.take(8*chunk))
+btrn = trn.unbatch().repeat().batch(bdim).map(munge_trn).take(325).cache().repeat().prefetch(tf.data.AUTOTUNE)
+
+# tstp = [i for i,x in enumerate(btrn)][-1]
+x = next(iter(btrn))
+tstp, minbatch = 0, 10000000
+for i,x in enumerate(btrn):
+    tstp, minbatch = i, min(minbatch,tf.shape(x[0][1])[0].numpy())
+    if i > 350: 
+        break
+    print(minbatch)
+    print(i)
+
+val  = src.skip(8*chunk).take(chunk).cache()
 vstp = math.floor(val.cardinality().numpy()/bdim)
 bval = val.batch(bdim).take(vstp).map(munge_trn).cache().prefetch(tf.data.AUTOTUNE)
 
-def fit(natoms=20):
-    importlib.reload(arch)
-    model,params = arch.transfer_ff(dim,3)
-    tenboard = tf.keras.callbacks.TensorBoard(log_dir='./logs')
-    patience = keras.callbacks.EarlyStopping(patience=50,restore_best_weights=True,monitor="val_accuracy")
-    model.fit(btrn,epochs=1000,steps_per_epoch=tstp,batch_size=bdim,
-        validation_data=bval, validation_steps=vstp, verbose=1,
-        callbacks=[tenboard,patience])
-    return model
+hld  = src.skip(9*chunk).cache()
 
-model = fit(natoms=100)
-model.save(f'cache/tmp/model.h5')
-# load model
-model = keras.models.load_model(f'cache/tmp/model.h5', custom_objects={'isometric_loss': arch.isometric_loss})
+
+
+model = arch.train_test_model(dim,{},btrn,tstp,bval,bdim,vstp)
+model.save(f'cache/siamese-model.h5')
+# load model with the SiameseLoss custom loss class
+model = keras.models.load_model(f'cache/siamese-model.h5', 
+    custom_objects={'SiameseLoss': arch.SiameseLoss, "ProjectionConstraint": arch.ProjectionConstraint})
+
 embed = Model(name="isomulti", inputs=model.inputs, outputs=model.get_layer('embedding').output)
 pembd = Model(name="pidmulti", inputs=model.inputs[1], outputs=model.get_layer('pid_embedding').output)
 
-it = iter(btrn.rebatch(100))
+it = iter(btrn.rebatch(1000))
 x = next(it)
 emb = embed.predict(x[0])
-emb = pembd.predict(tf.constant(list(range(1,200))))
+emb = pembd.predict(tf.range(500))
 
 import seaborn as sns
 
@@ -64,12 +76,12 @@ import matplotlib.pyplot as plt
 # Create a rank 2 tensor of random float32 values
 data = emb
 
-plot = sns.clustermap(data, row_cluster=True)
+plot = sns.clustermap(data, row_cluster=True, col_cluster=True)
 
 # Create a heatmap from the tensor
 plt.imshow(data, cmap='hot')
 plt.colorbar()
-plt.savefig("heatmap.png")
+plt.savefig("heatmap-emb.png")
 
 inpdif = tf.matmul(x[0][0],x[0][0],transpose_b=True)
 # output should have aid, pid, embedding_type, smiles, array, value

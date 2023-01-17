@@ -4,3 +4,4 @@ brick
 *.tf
 *.jar
 .metals
+*.pyc
