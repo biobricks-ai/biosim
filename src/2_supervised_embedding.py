@@ -53,12 +53,14 @@ bval = val.batch(bdim).take(vstp).map(munge_trn).cache().prefetch(tf.data.AUTOTU
 
 hld  = src.skip(9*chunk).cache()
 
+# git add *.pyc to .gitignore and remove from git cache
+
 
 
 model = arch.train_test_model(dim,{},btrn,tstp,bval,bdim,vstp)
-model.save(f'cache/siamese-model.h5')
+model.save(f'cache/h5model/siamese.h5')
 # load model with the SiameseLoss custom loss class
-model = keras.models.load_model(f'cache/siamese-model.h5', 
+model = keras.models.load_model(f'cache/h5model/siamese.h5', 
     custom_objects={'SiameseLoss': arch.SiameseLoss, "ProjectionConstraint": arch.ProjectionConstraint})
 
 embed = Model(name="isomulti", inputs=model.inputs, outputs=model.get_layer('embedding').output)
