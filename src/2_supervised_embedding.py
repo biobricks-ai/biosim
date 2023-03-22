@@ -5,15 +5,11 @@ import pandas as pd
 from keras.layers import Input, Dense, Lambda, Dot
 from keras.models import Model
 from src.py import model as arch
+from src.py import utilities as util
 
 # TRAIN EMBEDDINGS =======================================================================
-# def train_transfer_ff(trn,val):
-
-src = tf.data.Dataset.load("cache/tfdatasets/activity_embedding").shuffle(100000)
-def munge_src(row):
-    row['pidnum'] = tf.cast(row['pidnum'],tf.int64)
-    return row
-src = src.map(munge_src)
+src = tf.data.Dataset.load("cache/tfdatasets/activity_embedding")
+src = src.map(lambda d: dict(d,**{'pidnum':tf.cast(d['pidnum'],tf.int64)}))
 
 def pid_batches(ds,batchsize = 10000): 
     return ds.group_by_window(
@@ -21,78 +17,76 @@ def pid_batches(ds,batchsize = 10000):
         reduce_func = lambda _,batch: batch.batch(batchsize),
         window_size = batchsize)
 
-embedding="emb_chembert"
-bdim = 10000
-dim = tf.shape(next(iter(src))[embedding]).numpy()[0]
-maxpidnum = 500 #trn.reduce(0., lambda x,y: tf.maximum(x,y['pidnum'])).numpy()
-
-def munge_trn(row):
+def munge_trn(row,embedding):
     x = tf.reshape(row[embedding],(bdim,dim))
     p = tf.reshape(row['pidnum'],(bdim,1))
     y = tf.reshape(row['binvalue'],(bdim,1))
     return ((x,p),(y,x))
 
+# SELECT EMBEDDING FOR TRAINING AND BATCH/PROPERTY PARAMETERS =============================
+embedding = "emb_chembert"
+dim = tf.shape(next(iter(src))[embedding]).numpy()[0]
+bdim, maxpidnum = 10000, 500
+
+## Build holdout, validation, and batched training set
 chunk = math.ceil(src.cardinality().numpy()*0.1)
+trn = src.take(8*chunk)
+val = src.skip(8*chunk).take(chunk).cache()
+hld = src.skip(9*chunk).cache()
 
-trn  = pid_batches(src.take(8*chunk))
-btrn = trn.unbatch().repeat().batch(bdim).map(munge_trn).take(325).cache().repeat().prefetch(tf.data.AUTOTUNE)
+btrn = pid_batches(trn, bdim)
+tstp = list(util.collect(btrn,lambda i,x:i))[-1] 
+btrn = btrn.unbatch().repeat().batch(bdim).map(lambda x: munge_trn(x,embedding))
+btrn = btrn.take(tstp).cache().repeat().prefetch(tf.data.AUTOTUNE)
 
-# tstp = [i for i,x in enumerate(btrn)][-1]
-x = next(iter(btrn))
-tstp, minbatch = 0, 10000000
-for i,x in enumerate(btrn):
-    tstp, minbatch = i, min(minbatch,tf.shape(x[0][1])[0].numpy())
-    if i > 350: 
-        break
-    print(minbatch)
-    print(i)
-
-val  = src.skip(8*chunk).take(chunk).cache()
-vstp = math.floor(val.cardinality().numpy()/bdim)
-bval = val.batch(bdim).take(vstp).map(munge_trn).cache().prefetch(tf.data.AUTOTUNE)
-
-hld  = src.skip(9*chunk).cache()
-
-# git add *.pyc to .gitignore and remove from git cache
-
-
-
-model = arch.train_test_model(dim,{},btrn,tstp,bval,bdim,vstp)
+# BUILD AND SAVE MODEL ====================================================================
+model = arch.train_test_model(dim,{},btrn,tstp,val,bdim)
 model.save(f'cache/h5model/siamese.h5')
-# load model with the SiameseLoss custom loss class
+
+# PLOT EMBEDDINGS =========================================================================
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 model = keras.models.load_model(f'cache/h5model/siamese.h5', 
     custom_objects={'SiameseLoss': arch.SiameseLoss, "ProjectionConstraint": arch.ProjectionConstraint})
-
 embed = Model(name="isomulti", inputs=model.inputs, outputs=model.get_layer('embedding').output)
 pembd = Model(name="pidmulti", inputs=model.inputs[1], outputs=model.get_layer('pid_embedding').output)
 
-it = iter(btrn.rebatch(1000))
-x = next(it)
-emb = embed.predict(x[0])
-emb = pembd.predict(tf.range(500))
-
-import seaborn as sns
-
-import matplotlib.pyplot as plt
+def mkplot(data, name):
+    plot = sns.clustermap(data, row_cluster=True, col_cluster=True,vmin=0, vmax=1.)
+    plt.imshow(data, cmap='hot')
+    plt.colorbar()
+    plt.savefig(name)
 
 # Create a rank 2 tensor of random float32 values
-data = emb
+x = next(iter(val.filter(lambda x: x['pidnum'] == 3).batch(bdim)))
 
-plot = sns.clustermap(data, row_cluster=True, col_cluster=True)
+emb = tf.linalg.l2_normalize(x[embedding],axis=1)
+sim = tf.matmul(emb,emb,transpose_b=True)
+mkplot(emb, "heatmap.png")
+mkplot(sim, "heatmap-sim.png")
 
-# Create a heatmap from the tensor
-plt.imshow(data, cmap='hot')
-plt.colorbar()
-plt.savefig("heatmap-emb.png")
+embx = embed.predict((x[embedding],x["pidnum"])) 
+simx = tf.matmul(embx,embx,transpose_b=True)
+mkplot(embx, "eheatmap.png")
+mkplot(simx, "eheatmap-sim.png")
 
-inpdif = tf.matmul(x[0][0],x[0][0],transpose_b=True)
-# output should have aid, pid, embedding_type, smiles, array, value
-outpath = pl.Path(f'cache/tmp/embeddings')
-src.map(lambda x : 
-    x[model.name])
+embp = tf.linalg.l2_normalize(pembd.predict(tf.range(100)))
+simp = tf.matmul(embp,embp,transpose_b=True)
+mkplot(embp, "pheatmap.png")
+mkplot(simp, "pheatmap-sim.png")
 
-edf = hld.map(lambda i,p,e,smi,arr,v: (i,p,"isodense",smi,tf.squeeze(embed(arr)),v)).cache()
+topsim = tf.where(tf.logical_and(simx > 0.85 , simx < 0.999))
+smix = tf.gather(x['smiles'],topsim[:,0]).numpy()
+valx = tf.cast(tf.gather(x['binvalue'],topsim[:,0]),tf.int32).numpy()
+smiy = tf.gather(x['smiles'],topsim[:,1]).numpy()
+valy = tf.cast(tf.gather(x['binvalue'],topsim[:,1]),tf.int32).numpy()
+agg,tot = 0,0
+for i in range(smix.shape[0]):
+    print(f"{smix[i].decode()} {valx[i]}")
+    print(f"{smiy[i].decode()} {valy[i]}")
+    print()
+    agg = agg + 1 if valx[i] == valy[i] else agg
+    tot = tot + 1
 
-def embed(arr):
-    return model.predict(arr)
-
+print(f"Accuracy: {agg/tot}")

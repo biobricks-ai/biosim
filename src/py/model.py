@@ -88,7 +88,7 @@ class SiameseLoss(keras.losses.Loss):
         loss = tf.maximum(loss,0.0)
         return loss
 
-def train_test_model(dim,HP,btrn,tstp,bval,bdim,vstp):
+def train_test_model(dim,HP,btrn,tstp,val,bdim):
 
     HP = {
         arch.W1: 200,
@@ -130,6 +130,8 @@ def train_test_model(dim,HP,btrn,tstp,bval,bdim,vstp):
     em = Dense(units=HP[W2],activation=HP[ACTIVATION])(at)
     l1 = Lambda(lambda x: K.l2_normalize(x,axis=1),name=f"embedding")(em)
 
+    # add a dot product layer to this model    
+
     model = Model(inputs=[inp,pid],outputs=[l1],name="isomulti")
     sloss = arch.SiameseLoss(HP[arch.SIAMESE_COEF],HP[arch.SIAMESE_MARG])
     model.compile(keras.optimizers.Adam(learning_rate=HP[LEARNING_RATE]), 
@@ -141,8 +143,7 @@ def train_test_model(dim,HP,btrn,tstp,bval,bdim,vstp):
     tenboard = TensorBoard(log_dir='./logs')
     patience = EarlyStopping(patience=5,restore_best_weights=True)
     model.fit(btrn, epochs=30, steps_per_epoch=tstp, batch_size=bdim,
-        validation_data=bval, validation_steps=vstp, verbose=1,
-        callbacks=[tenboard,patience])
+        validation_data=val, verbose=1, callbacks=[tenboard,patience])
     
     return model
 
@@ -184,5 +185,9 @@ def param_search():
         run(session_num, 'logs/hparam_tuning/' + run_name, hparams)
         session_num += 1
     
-
-   
+def load_model(path):
+    co = {'SiameseLoss': arch.SiameseLoss, "ProjectionConstraint": arch.ProjectionConstraint}
+    model = keras.models.load_model(path, custom_objects=co)
+    embed = Model(name="isomulti", inputs=model.inputs, outputs=model.get_layer('embedding').output)
+    pembd = Model(name="pidmulti", inputs=model.inputs[1], outputs=model.get_layer('pid_embedding').output)
+    return types.SimpleNamespace(model=model,embed=embed,pembd=pembd)

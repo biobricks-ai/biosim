@@ -25,3 +25,16 @@ stages:
     - path: cache/h5model/siamese.h5
       md5: 8bb80826d5eda968bd4cc9203d925c83
       size: 5602048
+  build_raw_activities:
+    cmd: Rscript src/0_activities.R
+    deps:
+    - path: .bb/biobricks-ai/chemharmony/dvc.lock
+      md5: 2d72c4fa427a3b4c6e2bbcb8158fe4dd
+      size: 2236
+    - path: src/0_activities.R
+      md5: 01c60a3abfe89e1f46a6c5de8154f017
+      size: 908
+    outs:
+    - path: cache/tmp/activities.parquet
+      md5: 379d7884754f026d042a50c873a260a8
+      size: 227044563

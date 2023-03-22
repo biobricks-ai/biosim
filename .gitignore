@@ -5,3 +5,5 @@ brick
 *.jar
 .metals
 *.pyc
+logs
+.Rhistory

@@ -1,4 +1,11 @@
 stages:
+  build_raw_activities:
+    cmd: Rscript src/0_activities.R
+    deps:
+      - .bb/biobricks-ai/chemharmony/dvc.lock
+      - src/0_activities.R
+    outs:
+      - cache/tmp/activities.parquet
   build_activities:
     cmd: python src/1_activity_embeddings_tfds.py
     deps:

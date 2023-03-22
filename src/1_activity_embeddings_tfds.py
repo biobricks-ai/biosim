@@ -32,19 +32,20 @@ def smi2fp(smi):
 
 def embed_pubchem2d(smi):
     return tf.concat([[smi2fp(x) for x in smi]],axis=1)
-    
+
 # CHEMBERT ================================================================
-hface = "submodules/ChemBERTa-zinc-base-v1"
-tok = transformers.AutoTokenizer.from_pretrained(hface)
-brt = transformers.TFAutoModel.from_pretrained(hface,from_pt=True)
+# TODO come back and try with chembert
+# hface = "submodules/ChemBERTa-zinc-base-v1"
+# tok = transformers.AutoTokenizer.from_pretrained(hface)
+# brt = transformers.TFAutoModel.from_pretrained(hface,from_pt=True)
 
-def embed_chembert(smi):
-    inp = tok.batch_encode_plus(smi, padding="longest")
-    ids = tf.constant(inp['input_ids'])
-    att = tf.constant(inp['attention_mask'])
-    return brt(ids,att)[1]
+# def embed_chembert(smi):
+#     inp = tok.batch_encode_plus(smi, padding="longest")
+#     ids = tf.constant(inp['input_ids'])
+#     att = tf.constant(inp['attention_mask'])
+#     return brt(ids,att)[1]
 
-# create batches of 1k values from the smiles list
+# # create batches of 1k values from the smiles list
 bds = tf.data.Dataset.from_tensor_slices({"smiles":smiles}).batch(100)
 
 def embed_generator():
@@ -52,11 +53,11 @@ def embed_generator():
     for i,x in enumerate(bds):
         smi = [x.decode() for x in x['smiles'].numpy()]
         x['emb_pubchem2d'] = embed_pubchem2d(smi)
-        x['emb_chembert'] = embed_chembert(smi)
+        # x['emb_chembert'] = embed_chembert(smi)
         yield x
 
 types = {'smiles': tf.TensorSpec(shape=(None), dtype=tf.string),}
-types['emb_chembert'] = tf.TensorSpec(shape=(None,768), dtype=tf.float32)
+# types['emb_chembert'] = tf.TensorSpec(shape=(None,768), dtype=tf.float32)
 types['emb_pubchem2d'] = tf.TensorSpec(shape=(None,881), dtype=tf.float32)
 embed_ds = tf.data.Dataset.from_generator(embed_generator, output_signature=types)
 
@@ -65,16 +66,18 @@ def activities_generator():
     nb,t0 = bds.cardinality().numpy(), time()
     for i,batch in enumerate(embed_ds):
         smiles = [x.decode() for x in batch['smiles'].numpy()]
-        emb_chembert = batch['emb_chembert'].numpy()
+        # emb_chembert = batch['emb_chembert'].numpy()
         emb_pubchem2d = batch['emb_pubchem2d'].numpy()
         df = pd.DataFrame({'smiles':smiles,
-            'emb_chembert':emb_chembert.tolist(),
+            # 'emb_chembert':emb_chembert.tolist(),
             'emb_pubchem2d':emb_pubchem2d.tolist()})
         out = activities.merge(df,how='inner',on='smiles').to_dict('list')
         print(f"{i} / {nb} in {time()-t0:.2f}s rem: {(time()-t0)/(i+1)*(nb-i-1):.2f}s")
         res = {k:tf.constant(v) for k,v in out.items()}
         # select smiles, emb_chembert, emb_pubchem2d from res
-        yield {k:res[k] for k in ['smiles','pid','pidnum','value','normvalue','binvalue','emb_chembert','emb_pubchem2d']}
+        yield {k:res[k] for k in ['smiles','pid','pidnum','value','normvalue','binvalue',
+                                #   'emb_chembert',
+                                  'emb_pubchem2d']}
 
 types = {
     'smiles': tf.TensorSpec(shape=(None), dtype=tf.string),
@@ -83,7 +86,7 @@ types = {
     'value': tf.TensorSpec(shape=(None), dtype=tf.float32),
     'normvalue': tf.TensorSpec(shape=(None), dtype=tf.float32),
     'binvalue': tf.TensorSpec(shape=(None), dtype=tf.float32),
-    'emb_chembert': tf.TensorSpec(shape=(None,768), dtype=tf.float32),
+    # 'emb_chembert': tf.TensorSpec(shape=(None,768), dtype=tf.float32),
     'emb_pubchem2d': tf.TensorSpec(shape=(None,881), dtype=tf.float32)
 }
 
