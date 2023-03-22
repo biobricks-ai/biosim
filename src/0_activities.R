@@ -1,30 +1,23 @@
-pacman::p_load(biobricks,tidyverse)
+reticulate::use_virtualenv("./venv", required = TRUE)
+pacman::p_load(biobricks, tidyverse, memoise)
 
-activities <- brick_load("chemharmony")$harmonized$activities.parquet |> collect()
+activities <- bbload("chemharmony")$activities |> collect()
+activities <- activities |> filter(!is.na(smiles))
 
-activities <- activities |> select(smiles,pid,value) |>
-  group_by(smiles,pid) |> summarize(value = mean(value)) |> ungroup()
+# remove pid+values with less than 1000 values
+activities <- activities |> group_by(pid,value) |> filter(n()>1000) |> ungroup()
 
-activities <- activities |> group_by(pid) |> filter(n() > 1000)
+# remove pids with less than 2 values
+activities <- activities |> group_by(pid) |> filter(n_distinct(value)>1) |> ungroup()
 
-activities <- activities |> 
-  filter(!is.na(smiles)) |>
-  group_by(pid) |> mutate(u = mean(value), sd=sqrt(var(value)), md = median(value)) |> ungroup() |> 
-  mutate(normvalue = (value - u)/sd) |>
-  mutate(binvalue = ifelse(value > md,1,0)) 
+# make pidnum and valnum
+activities$pidnum <- activities$pid |> factor() |> as.numeric()
+activities$valnum <- activities$value |> factor() |> as.numeric()
 
-activities$pidnum = activities$pid |> factor() |> as.numeric()
+# shuffle and select
+activities <- activities |> sample_frac(1.0)
+activities <- activities |> select(inchi,smiles,pid,pidnum,value,valnum)
 
-pids <- activities |>   
-  group_by(pid) |> summarize(cnt0 = sum(binvalue==0), cnt1=sum(binvalue==1)) |> ungroup() |>  
-  mutate(rat = cnt0/cnt1) |> 
-  filter(rat < 1.25, rat > 0.75, cnt0 > 500, cnt1 > 500) |>
-  pull(pid)
-
-activities <- activities |> filter(pid %in% pids) |> sample_frac(1.0)
-
-activities |>
-  select(smiles,pid,pidnum,value,normvalue,binvalue) |> 
-  arrow::write_parquet("cache/tmp/activities.parquet")
-
-activities <- arrow::read_parquet("cache/tmp/activities.parquet")
+# write to the temporary cache
+output <- fs::dir_create("cache/tmp") |> fs::path("activities.parquet")
+activities |> arrow::write_parquet(output)
